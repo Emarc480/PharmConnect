@@ -1,0 +1,185 @@
+/* PharmConnect — shared low-fidelity wireframe styles
+   Used by every screen so the set stays visually consistent
+   across screens contributed by different teammates. */
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: Helvetica, Arial, sans-serif;
+  background: #f4f4f4;
+  color: #222;
+  margin: 0;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.page-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #1a3d3d;
+  margin-bottom: 24px;
+}
+
+.frame {
+  width: 320px;
+  border: 1px solid #999;
+  border-radius: 4px;
+  background: #fff;
+  padding: 14px;
+}
+
+.frame-tag {
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.frame-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 8px;
+}
+
+.frame-title .back {
+  color: #999;
+  margin-right: 6px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.box {
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 8px;
+  margin-bottom: 8px;
+  font-size: 9px;
+  color: #555;
+}
+
+.placeholder-img {
+  width: 100%;
+  height: 90px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    45deg, #eee, #eee 6px, #f7f7f7 6px, #f7f7f7 12px
+  );
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: #aaa;
+}
+
+.label {
+  font-size: 9px;
+  color: #666;
+  margin-bottom: 3px;
+}
+
+.value {
+  font-size: 10px;
+  color: #222;
+  font-weight: bold;
+}
+
+.btn {
+  border: 1px solid #333;
+  border-radius: 3px;
+  text-align: center;
+  padding: 8px;
+  font-size: 9px;
+  font-weight: bold;
+  color: #222;
+  margin-top: 10px;
+  background: #fafafa;
+}
+
+.btn.primary {
+  background: #222;
+  color: #fff;
+  border-color: #222;
+}
+
+.qty-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 6px 10px;
+  font-size: 10px;
+  width: fit-content;
+  margin: 8px 0;
+}
+
+.status-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+}
+
+.status-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  color: #999;
+  padding: 6px 0;
+  border-left: 2px solid #ddd;
+  padding-left: 10px;
+  margin-left: 4px;
+}
+
+.status-list li.done {
+  color: #222;
+  font-weight: bold;
+  border-left: 2px solid #222;
+}
+
+.status-list li.current {
+  color: #222;
+  font-weight: bold;
+  border-left: 2px solid #222;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid #999;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.status-list li.done .dot,
+.status-list li.current .dot {
+  background: #222;
+  border-color: #222;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 10px 0;
+}
+
+.caption {
+  font-size: 8px;
+  color: #999;
+  margin-top: 14px;
+  text-align: center;
+  max-width: 320px;
+}
