@@ -12,8 +12,8 @@ void main() {
     MultiProvider(
       providers: [
         //Marcus' providers
-        ChangeNotifierProvider(create: (_) => AuthProviders()),
-        ChangeNotifierProvider(create: (_) => DrugProvder()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => DrugProvider()),
       ],
       child: const PharmConnectApp(),
     ),
@@ -34,6 +34,6 @@ class PharmConnectApp extends StatelessWidget {
         AppRoutes.login: (context) => const LoginScreen(),
         AppRoutes.home: (context) => const HomeScreen(),
       },
-      );
+    );
   }
 }
