@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/drug.dart';
 import '../providers/cart_provider.dart';
+import '../providers/refill_provider.dart';
 import '../core/theme/app_theme.dart';
 import '../core/constants/app_routes.dart';
 
@@ -140,6 +141,7 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () {
+                context.read<RefillProvider>().submitRequest(drugName: drug.name);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Refill request sent for ${drug.name}')),
                 );

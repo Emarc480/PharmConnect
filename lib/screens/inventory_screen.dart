@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/medicine.dart';
 import '../providers/inventory_provider.dart';
+import '../core/constants/app_routes.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -68,8 +69,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: 1,
         onDestinationSelected: (index) {
-          if (index == 0) {
-            Navigator.pop(context);
+          switch (index) {
+            case 0:
+              Navigator.pop(context);
+              break;
+            case 2:
+              Navigator.pushNamed(context, AppRoutes.orders);
+              break;
+            case 3:
+              Navigator.pushNamed(context, AppRoutes.profile);
+              break;
           }
         },
         destinations: const [

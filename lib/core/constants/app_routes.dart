@@ -9,6 +9,10 @@ import '../../screens/drug_detail_screen.dart';
 import '../../screens/cart_screen.dart';
 import '../../screens/order_tracking_screen.dart';
 import '../../screens/order_management_screen.dart';
+import '../../screens/orders_list_screen.dart';
+import '../../screens/refill_request_screen.dart';
+import '../../screens/refill_management_screen.dart';
+import '../../screens/profile_screen.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -19,6 +23,10 @@ class AppRoutes {
   static const String drugDetail = '/drug-detail';
   static const String cart = '/cart';
   static const String orderTracking = '/order-tracking';
+  static const String myOrders = '/my-orders';
+  static const String refill = '/refill';
+  static const String refillManagement = '/refill-management';
+  static const String profile = '/profile';
 
   static Map<String, WidgetBuilder> routes = {
     login: (context) => const LoginScreen(),
@@ -27,6 +35,10 @@ class AppRoutes {
     inventory: (context) => const InventoryScreen(),
     orders: (context) => const OrderManagementScreen(),
     cart: (context) => const CartScreen(),
+    myOrders: (context) => const OrdersListScreen(),
+    refill: (context) => const RefillRequestScreen(),
+    refillManagement: (context) => const RefillManagementScreen(),
+    profile: (context) => const ProfileScreen(),
   };
 
   /// Handles routes that need arguments (drug object, order id).

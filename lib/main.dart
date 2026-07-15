@@ -6,6 +6,7 @@ import 'providers/auth_provider.dart';
 import 'providers/drug_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
+import 'providers/refill_provider.dart';
 import 'core/constants/app_routes.dart';
 import 'core/theme/app_theme.dart';
 
@@ -19,6 +20,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => DrugProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => RefillProvider()),
       ],
       child: const PharmConnectApp(),
     ),

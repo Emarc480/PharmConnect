@@ -1,11 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/constants/app_routes.dart';
+import '../models/order.dart';
+import '../providers/order_provider.dart';
+import '../providers/inventory_provider.dart';
+import '../providers/refill_provider.dart';
 
 class StaffDashboard extends StatelessWidget {
   const StaffDashboard({super.key});
 
+  String _formatUgx(int amount) {
+    final s = amount.toString();
+    final withCommas = s.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]},',
+    );
+    return 'UGX $withCommas';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final orders = context.watch<OrderProvider>().orders;
+    final inventory = context.watch<InventoryProvider>();
+    final refills = context.watch<RefillProvider>();
+
+    final newOrders = orders.where((o) => o.status == OrderStatus.placed).length;
+    final todaysSales = orders
+        .where((o) => o.orderDate.day == DateTime.now().day)
+        .fold(0, (sum, o) => sum + o.total);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -28,7 +51,7 @@ class StaffDashboard extends StatelessWidget {
                 Expanded(
                   child: _StatCard(
                     label: "New Orders",
-                    value: "5",
+                    value: "$newOrders",
                     valueColor: Colors.black87,
                   ),
                 ),
@@ -36,7 +59,7 @@ class StaffDashboard extends StatelessWidget {
                 Expanded(
                   child: _StatCard(
                     label: "Low Stock",
-                    value: "3",
+                    value: "${inventory.lowStockCount}",
                     valueColor: Colors.redAccent,
                   ),
                 ),
@@ -48,7 +71,7 @@ class StaffDashboard extends StatelessWidget {
                 Expanded(
                   child: _StatCard(
                     label: "Today's Sales",
-                    value: "UGX 240K",
+                    value: _formatUgx(todaysSales),
                     valueColor: Colors.black87,
                   ),
                 ),
@@ -56,8 +79,9 @@ class StaffDashboard extends StatelessWidget {
                 Expanded(
                   child: _StatCard(
                     label: "Pending Refills",
-                    value: "2",
+                    value: "${refills.pendingCount}",
                     valueColor: Colors.black87,
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.refillManagement),
                   ),
                 ),
               ],
@@ -104,7 +128,7 @@ class StaffDashboard extends StatelessWidget {
               Navigator.pushNamed(context, AppRoutes.orders);
               break;
             case 3:
-              // Navigator.pushNamed(context, AppRoutes.profile);
+              Navigator.pushNamed(context, AppRoutes.profile);
               break;
           }
         },
@@ -135,32 +159,38 @@ class _StatCard extends StatelessWidget {
   final String label;
   final String value;
   final Color valueColor;
+  final VoidCallback? onTap;
 
   const _StatCard({
     required this.label,
     required this.value,
     required this.valueColor,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 13, color: Colors.grey),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: valueColor,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: Colors.grey),
           ),
-        ),
-      ],
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: valueColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
