@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/drug_provider.dart';
 import '../../widgets/drug_card.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/constants/app_routes.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,6 +14,24 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
+
+  Future<void> _onNavTap(int index) async {
+    if (index == 0) {
+      setState(() => _navIndex = 0);
+      return;
+    }
+    setState(() => _navIndex = index);
+    final route = switch (index) {
+      1 => AppRoutes.myOrders,
+      2 => AppRoutes.refill,
+      3 => AppRoutes.profile,
+      _ => null,
+    };
+    if (route != null) {
+      await Navigator.pushNamed(context, route);
+    }
+    if (mounted) setState(() => _navIndex = 0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,10 +90,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       final drug = drugProvider.filteredDrugs[i];
                       return DrugCard(
                         drug: drug,
-                        onTap: () {
-                          // TODO: hand off to colleague's drug detail screen
-                          // Navigator.pushNamed(context, AppRoutes.drugDetail, arguments: drug);
-                        },
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.drugDetail,
+                          arguments: drug,
+                        ),
                       );
                     },
                   ),
@@ -84,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _navIndex,
         selectedItemColor: AppTheme.primaryNavy,
-        onTap: (i) => setState(() => _navIndex = i),
+        onTap: _onNavTap,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Orders'),
