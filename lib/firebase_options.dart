@@ -40,11 +40,12 @@ class DefaultFirebaseOptions {
   }
 
   // TODO: Replace every value below by running `flutterfire configure`.
+
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'REPLACE_ME',
-    appId: 'REPLACE_ME',
-    messagingSenderId: 'REPLACE_ME',
-    projectId: 'REPLACE_ME',
-    storageBucket: 'REPLACE_ME.appspot.com',
+    apiKey: 'AIzaSyCuqkWHZUOwmGi4Bo5cWCITVou5b-X5sko',
+    appId: '1:350268247024:android:9d77968d1a844ca583eb35',
+    messagingSenderId: '350268247024',
+    projectId: 'pharmconnect-76495',
+    storageBucket: 'pharmconnect-76495.firebasestorage.app',
   );
 }

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
@@ -40,8 +40,7 @@ class OrderProvider extends ChangeNotifier {
   }
 
   void _onSnapshot(QuerySnapshot<Map<String, dynamic>> snapshot) {
-    _orders =
-        snapshot.docs.map((d) => Order.fromMap(d.id, d.data())).toList();
+    _orders = snapshot.docs.map((d) => Order.fromMap(d.id, d.data())).toList();
     _isLoading = false;
     notifyListeners();
   }
@@ -71,16 +70,19 @@ class OrderProvider extends ChangeNotifier {
 
     await _db.runTransaction((tx) async {
       final drugRefs = {
-        for (final item in items) item.drugId: _db.collection('drugs').doc(item.drugId),
+        for (final item in items)
+          item.drugId: _db.collection('drugs').doc(item.drugId),
       };
       final drugSnaps = {
-        for (final entry in drugRefs.entries) entry.key: await tx.get(entry.value),
+        for (final entry in drugRefs.entries)
+          entry.key: await tx.get(entry.value),
       };
 
       for (final item in items) {
         final snap = drugSnaps[item.drugId];
         if (snap == null || !snap.exists) continue;
-        final currentStock = ((snap.data()?['stockQuantity'] as num?) ?? 0).toInt();
+        final currentStock = ((snap.data()?['stockQuantity'] as num?) ?? 0)
+            .toInt();
         final updatedStock = (currentStock - item.quantity).clamp(0, 999999);
         tx.update(drugRefs[item.drugId]!, {'stockQuantity': updatedStock});
       }

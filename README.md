@@ -1,6 +1,6 @@
 # PharmConnect
 
-A Flutter/Firebase pharmacy management prototype — Group 13, Mobile
+A Flutter/Firebase pharmacy management prototype, Mobile
 Application Development (Recess Term). See `PharmConnect_Full_Proposal.pdf`
 for the requirements (FR1–FR12, NFR1–NFR7) and UML diagrams this build
 implements against.

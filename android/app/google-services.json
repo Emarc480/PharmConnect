@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "350268247024",
+    "project_id": "pharmconnect-76495",
+    "storage_bucket": "pharmconnect-76495.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:350268247024:android:9d77968d1a844ca583eb35",
+        "android_client_info": {
+          "package_name": "com.example.pharm_connect"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "350268247024-q1hlc285hf588uatc0j4smbgn5qeefd0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCuqkWHZUOwmGi4Bo5cWCITVou5b-X5sko"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "350268247024-q1hlc285hf588uatc0j4smbgn5qeefd0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
