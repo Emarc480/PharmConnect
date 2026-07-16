@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/constants/app_routes.dart';
 import '../models/order.dart';
 import '../providers/order_provider.dart';
-import '../providers/inventory_provider.dart';
+import '../providers/drug_provider.dart';
 import '../providers/refill_provider.dart';
 
 class StaffDashboard extends StatelessWidget {
@@ -21,13 +21,14 @@ class StaffDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final orders = context.watch<OrderProvider>().orders;
-    final inventory = context.watch<InventoryProvider>();
+    final drugs = context.watch<DrugProvider>();
     final refills = context.watch<RefillProvider>();
 
     final newOrders = orders.where((o) => o.status == OrderStatus.placed).length;
     final todaysSales = orders
         .where((o) => o.orderDate.day == DateTime.now().day)
-        .fold(0, (sum, o) => sum + o.total);
+        .fold(0.0, (sum, o) => sum + o.total)
+        .round();
 
     return Scaffold(
       appBar: AppBar(
@@ -59,7 +60,7 @@ class StaffDashboard extends StatelessWidget {
                 Expanded(
                   child: _StatCard(
                     label: "Low Stock",
-                    value: "${inventory.lowStockCount}",
+                    value: "${drugs.lowStockCount}",
                     valueColor: Colors.redAccent,
                   ),
                 ),

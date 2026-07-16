@@ -23,23 +23,32 @@ class _RefillRequestScreenState extends State<RefillRequestScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    context.read<RefillProvider>().submitRequest(
-          drugName: _drugController.text.trim(),
-          notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-        );
-    _drugController.clear();
-    _notesController.clear();
-    FocusScope.of(context).unfocus();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Refill request submitted')),
-    );
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await context.read<RefillProvider>().submitRequest(
+            drugName: _drugController.text.trim(),
+            notes: _notesController.text.trim().isEmpty
+                ? null
+                : _notesController.text.trim(),
+          );
+      _drugController.clear();
+      _notesController.clear();
+      if (mounted) FocusScope.of(context).unfocus();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Refill request submitted')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not submit request. Please try again.')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final requests = context.watch<RefillProvider>().requests;
+    final requests = context.watch<RefillProvider>().myRequests;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Refill Requests')),

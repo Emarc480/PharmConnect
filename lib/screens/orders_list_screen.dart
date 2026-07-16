@@ -10,7 +10,7 @@ class OrdersListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final orders = context.watch<OrderProvider>().orders;
+    final orders = context.watch<OrderProvider>().myOrders;
 
     return Scaffold(
       appBar: AppBar(title: const Text('My Orders')),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/medicine.dart';
-import '../providers/inventory_provider.dart';
+import '../models/drug.dart';
+import '../providers/drug_provider.dart';
 import '../core/constants/app_routes.dart';
 
 class InventoryScreen extends StatefulWidget {
@@ -24,9 +24,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final inventory = context.watch<InventoryProvider>();
-    final medicines = inventory.medicines.where((medicine) {
-      return medicine.name.toLowerCase().contains(_query.toLowerCase());
+    final drugProvider = context.watch<DrugProvider>();
+    final drugs = drugProvider.allDrugs.where((drug) {
+      return drug.name.toLowerCase().contains(_query.toLowerCase());
     }).toList();
 
     return Scaffold(
@@ -37,34 +37,41 @@ class _InventoryScreenState extends State<InventoryScreen> {
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: [
+          if (drugProvider.allDrugs.isEmpty && !drugProvider.isLoading)
+            TextButton(
+              onPressed: () => drugProvider.seedSampleCatalog(),
+              child: const Text('Seed sample data'),
+            ),
           IconButton(
-            tooltip: 'Add medicine',
-            onPressed: () => _showAddMedicineSheet(context),
+            tooltip: 'Add drug',
+            onPressed: () => _showAddDrugSheet(context),
             icon: const Icon(Icons.add),
           ),
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 18, 24, 12),
-          children: [
-            TextField(
-              controller: _searchController,
-              onChanged: (value) => setState(() => _query = value),
-              decoration: const InputDecoration(
-                hintText: 'Search inventory...',
-                prefixIcon: Icon(Icons.search),
-                border: InputBorder.none,
+        child: drugProvider.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(24, 18, 24, 12),
+                children: [
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (value) => setState(() => _query = value),
+                    decoration: const InputDecoration(
+                      hintText: 'Search inventory...',
+                      prefixIcon: Icon(Icons.search),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  for (final drug in drugs)
+                    _InventoryRow(
+                      drug: drug,
+                      onEdit: () => _showEditStockSheet(context, drug),
+                    ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            for (final medicine in medicines)
-              _InventoryRow(
-                medicine: medicine,
-                onEdit: () => _showEditStockSheet(context, medicine),
-              ),
-          ],
-        ),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: 1,
@@ -107,15 +114,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  void _showAddMedicineSheet(BuildContext context) {
+  void _showAddDrugSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => const _AddMedicineForm(),
+      builder: (context) => const _AddDrugForm(),
     );
   }
 
-  void _showEditStockSheet(BuildContext context, Medicine medicine) {
+  void _showEditStockSheet(BuildContext context, Drug drug) {
     showModalBottomSheet<void>(
       context: context,
       builder: (context) => Padding(
@@ -125,23 +132,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              medicine.name,
+              drug.name,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
             ),
             const SizedBox(height: 6),
-            Text('${medicine.stock} units currently in stock'),
+            Text('${drug.stockQuantity} units currently in stock'),
             const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      context.read<InventoryProvider>().adjustStock(
-                            medicine.id,
-                            -1,
-                          );
+                      context.read<DrugProvider>().adjustStock(drug.id, -1);
                       Navigator.pop(context);
                     },
                     icon: const Icon(Icons.remove),
@@ -152,10 +156,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: () {
-                      context.read<InventoryProvider>().adjustStock(
-                            medicine.id,
-                            1,
-                          );
+                      context.read<DrugProvider>().adjustStock(drug.id, 1);
                       Navigator.pop(context);
                     },
                     icon: const Icon(Icons.add),
@@ -173,11 +174,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
 class _InventoryRow extends StatelessWidget {
   const _InventoryRow({
-    required this.medicine,
+    required this.drug,
     required this.onEdit,
   });
 
-  final Medicine medicine;
+  final Drug drug;
   final VoidCallback onEdit;
 
   @override
@@ -194,16 +195,16 @@ class _InventoryRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  medicine.name,
+                  drug.name,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${medicine.stock} units',
+                  '${drug.stockQuantity} units',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: medicine.isLowStock
+                    color: drug.isLowStock
                         ? theme.colorScheme.error
                         : theme.colorScheme.onSurfaceVariant,
                   ),
@@ -213,7 +214,7 @@ class _InventoryRow extends StatelessWidget {
           ),
           TextButton(
             onPressed: onEdit,
-            child: const Text('Ed'),
+            child: const Text('Edit'),
           ),
         ],
       ),
@@ -221,20 +222,21 @@ class _InventoryRow extends StatelessWidget {
   }
 }
 
-class _AddMedicineForm extends StatefulWidget {
-  const _AddMedicineForm();
+class _AddDrugForm extends StatefulWidget {
+  const _AddDrugForm();
 
   @override
-  State<_AddMedicineForm> createState() => _AddMedicineFormState();
+  State<_AddDrugForm> createState() => _AddDrugFormState();
 }
 
-class _AddMedicineFormState extends State<_AddMedicineForm> {
+class _AddDrugFormState extends State<_AddDrugForm> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _categoryController = TextEditingController();
   final _stockController = TextEditingController();
   final _reorderLevelController = TextEditingController();
   final _priceController = TextEditingController();
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -260,7 +262,7 @@ class _AddMedicineFormState extends State<_AddMedicineForm> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Add medicine',
+                'Add drug',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -269,7 +271,7 @@ class _AddMedicineFormState extends State<_AddMedicineForm> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Medicine name',
+                  labelText: 'Drug name',
                   border: OutlineInputBorder(),
                 ),
                 validator: _requiredText,
@@ -315,8 +317,14 @@ class _AddMedicineFormState extends State<_AddMedicineForm> {
               ),
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: _save,
-                child: const Text('Save medicine'),
+                onPressed: _isSaving ? null : _save,
+                child: _isSaving
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Save drug'),
               ),
             ],
           ),
@@ -329,7 +337,6 @@ class _AddMedicineFormState extends State<_AddMedicineForm> {
     if (value == null || value.trim().isEmpty) {
       return 'Required';
     }
-
     return null;
   }
 
@@ -338,23 +345,32 @@ class _AddMedicineFormState extends State<_AddMedicineForm> {
     if (number == null || number < 0) {
       return 'Enter a valid number';
     }
-
     return null;
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    context.read<InventoryProvider>().addMedicine(
-          name: _nameController.text.trim(),
-          category: _categoryController.text.trim(),
-          stock: int.parse(_stockController.text),
-          reorderLevel: int.parse(_reorderLevelController.text),
-          price: double.parse(_priceController.text),
+    setState(() => _isSaving = true);
+    final navigator = Navigator.of(context);
+    try {
+      await context.read<DrugProvider>().addDrug(
+            name: _nameController.text.trim(),
+            category: _categoryController.text.trim(),
+            stockQuantity: int.parse(_stockController.text),
+            reorderLevel: int.parse(_reorderLevelController.text),
+            price: double.parse(_priceController.text),
+          );
+      navigator.pop();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not save drug. Please try again.')),
         );
-
-    Navigator.pop(context);
+      }
+    }
   }
 }

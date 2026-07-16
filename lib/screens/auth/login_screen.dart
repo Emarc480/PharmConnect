@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../models/app_user.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/constants/app_routes.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _isRegisterMode = false;
+  UserRole _selectedRole = UserRole.customer;
 
   @override
   void dispose() {
@@ -29,31 +30,34 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _toggleMode() {
     setState(() => _isRegisterMode = !_isRegisterMode);
-    context.read<AuthProvider>().reset();
+    context.read<AuthProvider>().clearError();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
     final auth = context.read<AuthProvider>();
-    final success = _isRegisterMode
-        ? await auth.register(_emailController.text.trim(), _passwordController.text)
-        : await auth.login(_emailController.text.trim(), _passwordController.text);
-
-    if (success && mounted) {
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+    // No navigation call needed here: AuthGate (mounted at the app root)
+    // watches AuthProvider and swaps to HomeScreen/StaffDashboard the
+    // moment status flips to authenticated, routed by the role that was
+    // just stored — that's what makes staff vs. customer land in the
+    // right place, every time, straight from login.
+    if (_isRegisterMode) {
+      await auth.register(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        role: _selectedRole,
+      );
+    } else {
+      await auth.login(_emailController.text.trim(), _passwordController.text);
     }
-  }
-
-  void _continueAsGuest() {
-    context.read<AuthProvider>().continueAsGuest();
-    Navigator.pushReplacementNamed(context, AppRoutes.home);
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final isLoading = auth.status == AuthStatus.loading;
+    final isLoading = auth.status == AuthStatus.authenticating;
 
     return Scaffold(
       body: SafeArea(
@@ -117,6 +121,32 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
+                if (_isRegisterMode) ...[
+                  const SizedBox(height: 20),
+                  const Text(
+                    'I am registering as a',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  SegmentedButton<UserRole>(
+                    segments: const [
+                      ButtonSegment(
+                        value: UserRole.customer,
+                        label: Text('Customer'),
+                        icon: Icon(Icons.person_outline),
+                      ),
+                      ButtonSegment(
+                        value: UserRole.staff,
+                        label: Text('Pharmacy Staff'),
+                        icon: Icon(Icons.medical_services_outlined),
+                      ),
+                    ],
+                    selected: {_selectedRole},
+                    onSelectionChanged: (selection) {
+                      setState(() => _selectedRole = selection.first);
+                    },
+                  ),
+                ],
                 if (auth.status == AuthStatus.error && auth.errorMessage != null) ...[
                   const SizedBox(height: 12),
                   Text(auth.errorMessage!, style: const TextStyle(color: Colors.red)),
@@ -147,13 +177,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 24),
-                Center(
-                  child: TextButton(
-                    onPressed: _continueAsGuest,
-                    child: const Text('Continue as Guest'),
-                  ),
-                ),
               ],
             ),
           ),

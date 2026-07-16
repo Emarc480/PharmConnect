@@ -66,7 +66,7 @@ class OrderTrackingScreen extends StatelessWidget {
                   for (final item in order.items)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Text('${item.drug.name} × ${item.quantity}'),
+                      child: Text('${item.drugName} × ${item.quantity}'),
                     ),
                   const Divider(),
                   Text('Total: ${order.formattedTotal}',

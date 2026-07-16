@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/drug.dart';
+import '../../screens/auth/auth_gate.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/home/home_screen.dart';
 import '../../screens/staff_dashboard.dart';
@@ -13,11 +14,15 @@ import '../../screens/orders_list_screen.dart';
 import '../../screens/refill_request_screen.dart';
 import '../../screens/refill_management_screen.dart';
 import '../../screens/profile_screen.dart';
+import '../../widgets/role_guard.dart';
 
 class AppRoutes {
+  /// Root route: decides between Login / Home / Staff Dashboard based on
+  /// the restored (or fresh) auth session — see AuthGate.
+  static const String splash = '/';
   static const String login = '/login';
   static const String home = '/home';
-  static const String dashboard = '/';
+  static const String staffDashboard = '/staff-dashboard';
   static const String inventory = '/inventory';
   static const String orders = '/orders';
   static const String drugDetail = '/drug-detail';
@@ -29,15 +34,16 @@ class AppRoutes {
   static const String profile = '/profile';
 
   static Map<String, WidgetBuilder> routes = {
+    splash: (context) => const AuthGate(),
     login: (context) => const LoginScreen(),
     home: (context) => const HomeScreen(),
-    dashboard: (context) => const StaffDashboard(),
-    inventory: (context) => const InventoryScreen(),
-    orders: (context) => const OrderManagementScreen(),
+    staffDashboard: (context) => const StaffOnly(child: StaffDashboard()),
+    inventory: (context) => const StaffOnly(child: InventoryScreen()),
+    orders: (context) => const StaffOnly(child: OrderManagementScreen()),
     cart: (context) => const CartScreen(),
     myOrders: (context) => const OrdersListScreen(),
     refill: (context) => const RefillRequestScreen(),
-    refillManagement: (context) => const RefillManagementScreen(),
+    refillManagement: (context) => const StaffOnly(child: RefillManagementScreen()),
     profile: (context) => const ProfileScreen(),
   };
 
