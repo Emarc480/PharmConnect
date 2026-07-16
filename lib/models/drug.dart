@@ -1,29 +1,53 @@
+/// Single source of truth for a pharmacy drug/medicine record.
+///
+/// This replaces the old split between `Drug` (customer catalog) and
+/// `Medicine` (staff inventory) — both screens now read and write the
+/// same Firestore-backed model, so a stock change made by staff in
+/// Inventory is immediately reflected in the customer-facing catalog.
+///
+/// Matches the ERD's DRUG entity: drug_id, name, description, price,
+/// stock_quantity, category (reorder_level is an added field used to
+/// drive low-stock alerts, per FR11).
+library;
+
 enum StockStatus { inStock, lowStock, outOfStock }
 
-class Drug{
+class Drug {
   final String id;
   final String name;
-  final int priceUgx;
-  final StockStatus stockStatus;
-  final int unitsAvailable;
+  final String description;
   final String category;
-  final String? imageUrl; //Check this one later
+  final double price;
+  final int stockQuantity;
+  final int reorderLevel;
 
-  Drug({
+  const Drug({
     required this.id,
     required this.name,
-    required this.priceUgx,
-    required this.stockStatus,
-    required this.unitsAvailable,
     required this.category,
-    this.imageUrl,
+    required this.price,
+    required this.stockQuantity,
+    this.description = '',
+    this.reorderLevel = 10,
   });
 
+  /// Stock status is always derived from live stockQuantity — never
+  /// stored separately — so it can never drift out of sync (FR3).
+  StockStatus get stockStatus {
+    if (stockQuantity <= 0) return StockStatus.outOfStock;
+    if (stockQuantity <= reorderLevel) return StockStatus.lowStock;
+    return StockStatus.inStock;
+  }
+
+  bool get isLowStock => stockStatus != StockStatus.inStock;
+
+  int get unitsAvailable => stockQuantity;
+
   String get formattedPrice {
-    final s = priceUgx.toString();
+    final s = price.round().toString();
     final withCommas = s.replaceAllMapped(
       RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]},'
+      (m) => '${m[1]},',
     );
     return "UGX $withCommas";
   }
@@ -37,5 +61,47 @@ class Drug{
       case StockStatus.outOfStock:
         return 'Out of Stock';
     }
+  }
+
+  Drug copyWith({
+    String? name,
+    String? description,
+    String? category,
+    double? price,
+    int? stockQuantity,
+    int? reorderLevel,
+  }) {
+    return Drug(
+      id: id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      price: price ?? this.price,
+      stockQuantity: stockQuantity ?? this.stockQuantity,
+      reorderLevel: reorderLevel ?? this.reorderLevel,
+    );
+  }
+
+  factory Drug.fromMap(String id, Map<String, dynamic> map) {
+    return Drug(
+      id: id,
+      name: (map['name'] as String?) ?? '',
+      description: (map['description'] as String?) ?? '',
+      category: (map['category'] as String?) ?? 'Uncategorized',
+      price: ((map['price'] as num?) ?? 0).toDouble(),
+      stockQuantity: ((map['stockQuantity'] as num?) ?? 0).toInt(),
+      reorderLevel: ((map['reorderLevel'] as num?) ?? 10).toInt(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'description': description,
+      'category': category,
+      'price': price,
+      'stockQuantity': stockQuantity,
+      'reorderLevel': reorderLevel,
+    };
   }
 }

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/app_user.dart';
 import '../providers/auth_provider.dart';
 import '../core/theme/app_theme.dart';
-import '../core/constants/app_routes.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().currentUser;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: SafeArea(
@@ -21,18 +23,19 @@ class ProfileScreen extends StatelessWidget {
               child: Icon(Icons.person, size: 36, color: Colors.white),
             ),
             const SizedBox(height: 24),
-            const _ProfileRow(label: 'Name', value: 'Guest User'),
-            const _ProfileRow(label: 'Email', value: '—'),
-            const _ProfileRow(label: 'Role', value: 'Customer'),
+            _ProfileRow(label: 'Name', value: user?.name ?? '—'),
+            _ProfileRow(label: 'Email', value: user?.email ?? '—'),
+            _ProfileRow(label: 'Role', value: user?.role.label ?? '—'),
             const SizedBox(height: 32),
             OutlinedButton(
               onPressed: () {
-                context.read<AuthProvider>().reset();
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  AppRoutes.login,
-                  (route) => false,
-                );
+                // No manual navigation needed: AuthGate at the app root
+                // watches AuthProvider and swaps to LoginScreen the
+                // moment the session is cleared. We still pop back to
+                // the root first so no stale pushed screens are left
+                // sitting on top of it.
+                Navigator.of(context).popUntil((route) => route.isFirst);
+                context.read<AuthProvider>().signOut();
               },
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),

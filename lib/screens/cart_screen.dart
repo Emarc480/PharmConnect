@@ -33,10 +33,10 @@ class CartScreen extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(item.drug.name,
+                                  Text(item.drugName,
                                       style: const TextStyle(fontWeight: FontWeight.w600)),
                                   const SizedBox(height: 2),
-                                  Text(item.drug.formattedPrice,
+                                  Text(item.formattedUnitPrice,
                                       style: TextStyle(color: Colors.grey.shade600)),
                                 ],
                               ),
@@ -45,11 +45,11 @@ class CartScreen extends StatelessWidget {
                               quantity: item.quantity,
                               onChanged: (q) => context
                                   .read<CartProvider>()
-                                  .setQuantity(item.drug, q),
+                                  .setQuantityById(item.drugId, q),
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              _formatUgx(item.subtotal),
+                              _formatUgx(item.subtotal.round()),
                               style: const TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ],
@@ -104,18 +104,27 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  void _placeOrder(BuildContext context) {
+  Future<void> _placeOrder(BuildContext context) async {
     final cart = context.read<CartProvider>();
-    final order = context.read<OrderProvider>().placeOrder(
-          items: cart.items,
-          deliveryAddress: 'Plot 7 Ntinda Road, Kampala',
-        );
-    cart.clear();
-    Navigator.pushReplacementNamed(
-      context,
-      AppRoutes.orderTracking,
-      arguments: order.id,
-    );
+    final orderProvider = context.read<OrderProvider>();
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final order = await orderProvider.placeOrder(
+        items: cart.items,
+        deliveryAddress: 'Plot 7 Ntinda Road, Kampala',
+      );
+      cart.clear();
+      navigator.pushReplacementNamed(
+        AppRoutes.orderTracking,
+        arguments: order.id,
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not place order. Please try again.')),
+      );
+    }
   }
 
   String _formatUgx(int amount) {
