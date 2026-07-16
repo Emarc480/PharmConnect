@@ -6,6 +6,7 @@ import 'providers/auth_provider.dart';
 import 'providers/drug_provider.dart';
 import 'core/constants/app_routes.dart';
 import 'core/theme/app_theme.dart';
+import 'providers/view_mode_provider.dart';
 
 void main() {
   runApp(
@@ -15,6 +16,7 @@ void main() {
         // Marcus' providers
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DrugProvider()),
+        ChangeNotifierProvider(create: (_) => ViewModeProvider()),
       ],
       child: const PharmConnectApp(),
     ),

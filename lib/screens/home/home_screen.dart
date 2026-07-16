@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/drug_provider.dart';
 import '../../widgets/drug_card.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/constants/app_routes.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,7 +21,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PharmConnect', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'PharmConnect',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: Column(
         children: [
@@ -54,7 +58,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   label: Text(category),
                   selected: isSelected,
                   selectedColor: AppTheme.primaryNavy,
-                  labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87),
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black87,
+                  ),
                   onSelected: (_) => drugProvider.setCategory(category),
                 );
               },
@@ -84,10 +90,16 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _navIndex,
         selectedItemColor: AppTheme.primaryNavy,
-        onTap: (i) => setState(() => _navIndex = i),
+        onTap: (i) {
+          setState(() => _navIndex = i);
+          if (i == 3) Navigator.pushNamed(context, AppRoutes.profile);
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Orders'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long),
+            label: 'Orders',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.refresh), label: 'Refill'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
