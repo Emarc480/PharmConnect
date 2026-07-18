@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/app_user.dart';
 import '../providers/auth_provider.dart';
 import '../core/theme/app_theme.dart';
+import '../core/constants/app_routes.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -12,7 +13,7 @@ class ProfileScreen extends StatelessWidget {
     final user = context.watch<AuthProvider>().currentUser;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: const Text('Account')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),
@@ -26,7 +27,20 @@ class ProfileScreen extends StatelessWidget {
             _ProfileRow(label: 'Name', value: user?.name ?? '—'),
             _ProfileRow(label: 'Email', value: user?.email ?? '—'),
             _ProfileRow(label: 'Role', value: user?.role.label ?? '—'),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+            const Divider(),
+            _MenuTile(
+              icon: Icons.receipt_long_outlined,
+              label: 'My Orders',
+              onTap: () => Navigator.pushNamed(context, AppRoutes.myOrders),
+            ),
+            _MenuTile(
+              icon: Icons.refresh,
+              label: 'Refill Request',
+              onTap: () => Navigator.pushNamed(context, AppRoutes.refill),
+            ),
+            const Divider(),
+            const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () {
                 // No manual navigation needed: AuthGate at the app root
@@ -47,6 +61,25 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MenuTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _MenuTile({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: AppTheme.primaryNavy),
+      title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+      onTap: onTap,
     );
   }
 }
