@@ -1,28 +1,21 @@
 rules_version = '2';
 
-// Paste this into Firebase Console → Firestore Database → Rules,
-// or deploy with `firebase deploy --only firestore:rules` if you set
-// up the Firebase CLI. Matches NFR4 (role-based access enforced) and
-// the FR1–FR12 split between customer and staff actions.
-
-function isSignedIn() {
-  return request.auth != null;
-}
-
-function isStaff() {
-  return isSignedIn() &&
-    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff';
-}
-
-function isOwner(userId) {
-  return isSignedIn() && request.auth.uid == userId;
-}
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users can read/write only their own profile document; nobody
-    // can set their own role to escalate privileges after creation.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isStaff() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId) || isStaff();
       allow create: if isOwner(userId);
@@ -30,24 +23,22 @@ service cloud.firestore {
         request.resource.data.role == resource.data.role;
     }
 
-    // Drug catalog: any signed-in user can read (customer browsing +
-    // staff inventory both read the same collection); only staff can
-    // write (FR8), except stock decrements from a placed order, which
-    // run inside the same transaction as the order write.
     match /drugs/{drugId} {
-      allow read: if isSignedIn();
-      allow write: if isStaff();
+  allow read: if isSignedIn();
+  allow create, delete: if isStaff();
+  allow update: if isStaff() ||
+    (isSignedIn() &&
+     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stockQuantity']) &&
+     request.resource.data.stockQuantity <= resource.data.stockQuantity);
+
     }
 
-    // Orders: a customer can create their own order and read only
-    // their own; staff can read/update all (FR9, FR10).
     match /orders/{orderId} {
       allow read: if isStaff() || (isSignedIn() && resource.data.customerId == request.auth.uid);
       allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
       allow update, delete: if isStaff();
     }
 
-    // Refill requests: same shape as orders (FR4 vs staff view).
     match /refill_requests/{requestId} {
       allow read: if isStaff() || (isSignedIn() && resource.data.requesterId == request.auth.uid);
       allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;

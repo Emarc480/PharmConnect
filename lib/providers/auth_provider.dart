@@ -27,12 +27,26 @@ class AuthProvider extends ChangeNotifier {
   AppUser? _currentUser;
   String? _errorMessage;
 
+  // True while register() is actively creating the account + profile
+  // doc. The authStateChanges() listener fires the instant the auth
+  // account is created — before register() has written the Firestore
+  // profile doc — so without this guard _onAuthChanged sees "no doc
+  // yet" and signs the brand-new user right back out mid-registration.
+  bool _isRegistering = false;
+
   AuthStatus get status => _status;
   AppUser? get currentUser => _currentUser;
   String? get errorMessage => _errorMessage;
   bool get isStaff => _currentUser?.role == UserRole.staff;
 
   Future<void> _onAuthChanged(User? firebaseUser) async {
+    if (_isRegistering) {
+      // register() is mid-flight and will finish creating the profile
+      // doc + set our own status itself. Ignore this firing entirely
+      // instead of racing it — reacting here is what was signing
+      // brand-new users back out before their doc existed.
+      return;
+    }
     if (firebaseUser == null) {
       _currentUser = null;
       _status = AuthStatus.unauthenticated;
@@ -100,6 +114,7 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     _status = AuthStatus.authenticating;
     _errorMessage = null;
+    _isRegistering = true;
     notifyListeners();
     try {
       final credential = await _auth.createUserWithEmailAndPassword(
@@ -114,18 +129,22 @@ class AuthProvider extends ChangeNotifier {
 
       _currentUser = profile;
       _status = AuthStatus.authenticated;
-      notifyListeners();
       return true;
     } on FirebaseAuthException catch (e) {
       _status = AuthStatus.error;
       _errorMessage = _messageFor(e);
-      notifyListeners();
       return false;
-    } catch (_) {
+    } catch (e) {
+      // Surface the real error instead of a generic message — this is
+      // what makes the next bug (if any) show its actual cause on
+      // screen instead of a dead-end "try again".
       _status = AuthStatus.error;
-      _errorMessage = 'Registration failed. Please try again.';
-      notifyListeners();
+      _errorMessage = 'Registration failed: $e';
+      debugPrint('Registration error: $e');
       return false;
+    } finally {
+      _isRegistering = false;
+      notifyListeners();
     }
   }
 
