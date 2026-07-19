@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/drug.dart';
@@ -30,15 +32,22 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            Container(
-              height: 160,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(
-                child: Icon(Icons.medication, size: 56, color: Colors.grey),
-              ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: drug.hasImage
+                  ? Image.memory(
+                      base64Decode(drug.imageBase64!),
+                      height: 160,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    )
+                  : Container(
+                      height: 160,
+                      color: Colors.grey.shade100,
+                      child: const Center(
+                        child: Icon(Icons.medication, size: 56, color: Colors.grey),
+                      ),
+                    ),
             ),
             const SizedBox(height: 20),
             Row(
