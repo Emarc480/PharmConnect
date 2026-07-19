@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/drug.dart';
+import '../core/constants/drug_categories.dart';
 
 enum DrugSortOption { relevance, priceLowToHigh, priceHighToLow, nameAZ }
 
@@ -24,10 +25,7 @@ extension DrugSortOptionLabel on DrugSortOption {
 
 /// Single provider for the `drugs` Firestore collection, used by BOTH
 /// the customer catalog (Home/Browse, Drug Detail) and the staff
-/// Inventory screen. This replaces the old DrugProvider + separate
-/// InventoryProvider/Medicine split: there is now exactly one drug
-/// record per drug, so a stock edit in Inventory is the same
-/// stockQuantity the customer sees on the catalog (FR3 + FR8).
+/// Inventory screen.
 class DrugProvider extends ChangeNotifier {
   DrugProvider() {
     _sub = _db
@@ -54,10 +52,11 @@ class DrugProvider extends ChangeNotifier {
   String get selectedCategory => _selectedCategory;
   DrugSortOption get sortOption => _sortOption;
 
-  List<String> get categories => [
-        'All',
-        ..._drugs.map((d) => d.category).toSet().toList()..sort(),
-      ];
+  /// Fixed list of the 18 pharmacy-wide categories, not derived from
+  /// whatever drugs currently exist — so every category shows up in
+  /// the filter (and can be picked when adding a drug) even before
+  /// the first drug in it has been added.
+  List<String> get categories => ['All', ...kDrugCategories];
 
   List<Drug> get allDrugs => List.unmodifiable(_drugs);
 
@@ -86,7 +85,6 @@ class DrugProvider extends ChangeNotifier {
     return results;
   }
 
-  /// Drugs staff have put on promotion — powers the Home "Offers" rail.
   List<Drug> get discountedDrugs =>
       List.unmodifiable(_drugs.where((d) => d.hasDiscount));
 
@@ -132,6 +130,7 @@ class DrugProvider extends ChangeNotifier {
     required double price,
     String description = '',
     int discountPercent = 0,
+    String? imageBase64,
   }) async {
     final drug = Drug(
       id: '',
@@ -142,18 +141,15 @@ class DrugProvider extends ChangeNotifier {
       stockQuantity: stockQuantity,
       reorderLevel: reorderLevel,
       discountPercent: discountPercent,
+      imageBase64: imageBase64,
     );
     await _db.collection('drugs').add(drug.toMap());
-    // The snapshot listener above will update _drugs automatically.
   }
 
   Future<void> updateDrug(Drug drug) async {
     await _db.collection('drugs').doc(drug.id).update(drug.toMap());
   }
 
-  /// Adjusts stock atomically so concurrent staff edits (or a customer
-  /// placing an order at the same time) can't silently overwrite each
-  /// other — safer than a plain read-then-write.
   Future<void> adjustStock(String id, int change) async {
     final ref = _db.collection('drugs').doc(id);
     await _db.runTransaction((tx) async {
@@ -169,27 +165,126 @@ class DrugProvider extends ChangeNotifier {
     await _db.collection('drugs').doc(id).delete();
   }
 
-  /// One-tap sample data for Day 3 of the coding outline — seeds
-  /// 12 sample drugs across the wireframe's three categories. Only
-  /// meant to be called once against an empty catalog (e.g. from a
-  /// debug button), not part of the production data flow.
+  /// Seeds the catalog from the 18-category reference list — every
+  /// medicine, country, and manufacturer noted goes into the
+  /// description field. Stock/price/reorder values are reasonable
+  /// placeholders for demo purposes (a few are deliberately set low
+  /// or to zero so the Low Stock / Out of Stock states have
+  /// something to show), and a handful carry a discount so the Home
+  /// "Offers" rail isn't empty. Only runs once against an empty
+  /// catalog.
   Future<void> seedSampleCatalog() async {
     if (_drugs.isNotEmpty) return;
     final batch = _db.batch();
+
+    Drug d(String name, String category, String desc, double price, int stock, {int reorder = 15, int discount = 0}) {
+      return Drug(id: '', name: name, category: category, description: desc, price: price, stockQuantity: stock, reorderLevel: reorder, discountPercent: discount);
+    }
+
     final samples = <Drug>[
-      const Drug(id: '', name: 'Paracetamol 500mg', category: 'Pain Relief', price: 2000, stockQuantity: 120, reorderLevel: 20, description: 'Pain and fever relief tablets.', discountPercent: 15),
-      const Drug(id: '', name: 'Ibuprofen 400mg', category: 'Pain Relief', price: 3500, stockQuantity: 8, reorderLevel: 15, description: 'Anti-inflammatory pain reliever.'),
-      const Drug(id: '', name: 'Aspirin 300mg', category: 'Pain Relief', price: 1500, stockQuantity: 60, reorderLevel: 15, description: 'Pain relief and blood thinner.'),
-      const Drug(id: '', name: 'Amoxicillin 500mg', category: 'Antibiotics', price: 8000, stockQuantity: 40, reorderLevel: 10, description: 'Broad-spectrum antibiotic capsules.'),
-      const Drug(id: '', name: 'Metronidazole 400mg', category: 'Antibiotics', price: 6000, stockQuantity: 0, reorderLevel: 10, description: 'Antibiotic for bacterial infections.'),
-      const Drug(id: '', name: 'Doxycycline 100mg', category: 'Antibiotics', price: 9500, stockQuantity: 25, reorderLevel: 10, description: 'Antibiotic for a range of infections.'),
-      const Drug(id: '', name: 'Vitamin C 1000mg', category: 'Vitamins', price: 12000, stockQuantity: 75, reorderLevel: 15, description: 'Immune support supplement.', discountPercent: 20),
-      const Drug(id: '', name: 'Multivitamin Complex', category: 'Vitamins', price: 18000, stockQuantity: 30, reorderLevel: 10, description: 'Daily multivitamin and mineral tablets.'),
-      const Drug(id: '', name: 'Vitamin D3 1000IU', category: 'Vitamins', price: 15000, stockQuantity: 9, reorderLevel: 10, description: 'Bone and immune health supplement.', discountPercent: 10),
-      const Drug(id: '', name: 'Cough Syrup', category: 'Cold & Flu', price: 7000, stockQuantity: 45, reorderLevel: 10, description: 'Relieves cough and throat irritation.'),
-      const Drug(id: '', name: 'Antihistamine Tablets', category: 'Cold & Flu', price: 4000, stockQuantity: 55, reorderLevel: 10, description: 'Allergy and cold symptom relief.'),
-      const Drug(id: '', name: 'ORS Sachets', category: 'Cold & Flu', price: 1000, stockQuantity: 100, reorderLevel: 20, description: 'Oral rehydration salts.'),
+      // 1. Pain & Fever
+      d('Paracetamol', 'Pain & Fever', 'Common manufacturers: Cipla, Sun Pharma, Micro Labs (India).', 2000, 150, discount: 15),
+      d('Ibuprofen', 'Pain & Fever', 'Common manufacturers: Alkem, Intas (India).', 3500, 90),
+      d('Diclofenac', 'Pain & Fever', 'Common manufacturers: Lupin, Cipla (India).', 4000, 60),
+      d('Aspirin', 'Pain & Fever', 'Manufactured in Germany by Bayer.', 3000, 8, reorder: 15),
+      d('Tramadol', 'Pain & Fever', 'Common manufacturers: Sun Pharma, Zydus (India).', 6000, 30),
+
+      // 2. Antibiotics
+      d('Amoxicillin', 'Antibiotics', 'Common manufacturers: Cipla, Mankind, Alkem (India).', 8000, 70, discount: 10),
+      d('Azithromycin', 'Antibiotics', 'Common manufacturers: Sun Pharma, Lupin (India).', 9500, 45),
+      d('Ciprofloxacin', 'Antibiotics', 'Common manufacturers: Cipla, Intas (India).', 7000, 55),
+      d('Metronidazole', 'Antibiotics', 'Manufactured in Uganda and India by Rene Industries, Cipla.', 5000, 0, reorder: 10),
+      d('Ceftriaxone', 'Antibiotics', 'Common manufacturers: Alkem, Lupin (India).', 12000, 20),
+      d('Co-trimoxazole (Septrin)', 'Antibiotics', 'Manufactured in Uganda and India by Rene Industries, Cipla.', 4500, 80),
+
+      // 3. Antimalarials
+      d('Artemether-Lumefantrine', 'Antimalarials', 'Manufactured in Uganda and India by Qcil, Cipla.', 10000, 100, discount: 10),
+      d('Quinine', 'Antimalarials', 'Manufactured in Uganda by Rene Industries.', 6000, 25),
+      d('Artesunate', 'Antimalarials', 'Common manufacturers: Cipla (India), Guilin (China).', 15000, 12, reorder: 15),
+      d('Fansidar', 'Antimalarials', 'Manufactured in France by Sanofi.', 5000, 40),
+
+      // 4. Dewormers
+      d('Albendazole', 'Dewormers', 'Common manufacturers: Cipla, Alkem (India).', 2500, 60),
+      d('Mebendazole', 'Dewormers', 'Common manufacturers: Janssen, Cipla (India).', 2000, 50),
+      d('Praziquantel', 'Dewormers', 'Manufactured in India by Lupin.', 3500, 30),
+      d('Ivermectin', 'Dewormers', 'Manufactured in India by Sun Pharma.', 4000, 20),
+
+      // 5. HIV (ARVs)
+      d('Tenofovir/Lamivudine/Dolutegravir (TLD)', 'HIV (ARVs)', 'Manufactured in Uganda and India by Qcil, Cipla, Mylan/Viatris.', 0, 200, reorder: 30),
+      d('Zidovudine', 'HIV (ARVs)', 'Manufactured in India by Cipla.', 0, 60, reorder: 15),
+
+      // 6. TB Medicines
+      d('RHZE Combination', 'TB Medicines', 'Manufactured in Uganda and India by Qcil, Macleods.', 0, 90, reorder: 20),
+
+      // 7. Cough & Cold
+      d('Salbutamol Syrup', 'Cough & Cold', 'Manufactured in India by Cipla.', 4500, 45),
+      d('Salbutamol Inhaler', 'Cough & Cold', 'Manufactured in India by Cipla.', 15000, 25),
+      d('Cough Syrups', 'Cough & Cold', 'Manufactured in Uganda by Rene Industries, Abacus Pharma.', 5000, 70, discount: 10),
+
+      // 8. Allergy
+      d('Cetirizine', 'Allergy', 'Common manufacturers: Sun Pharma, Cipla (India).', 2500, 65),
+      d('Loratadine', 'Allergy', 'Manufactured in India by Intas.', 3000, 40),
+      d('Chlorpheniramine', 'Allergy', 'Manufactured in India by Alkem.', 1500, 55),
+
+      // 9. Stomach
+      d('Omeprazole', 'Stomach', 'Common manufacturers: Dr. Reddy\'s, Cipla (India).', 4000, 75),
+      d('Pantoprazole', 'Stomach', 'Manufactured in India by Sun Pharma.', 4500, 50),
+      d('ORS Sachets', 'Stomach', 'Manufactured in Uganda by Joint Medical Stores and local suppliers.', 1000, 120, reorder: 20),
+      d('Zinc Tablets', 'Stomach', 'Manufactured in Uganda by Qcil, Rene Industries.', 2000, 60),
+      d('Loperamide', 'Stomach', 'Manufactured in India by Cipla.', 2500, 35),
+
+      // 10. Diabetes
+      d('Metformin', 'Diabetes', 'Common manufacturers: Sun Pharma, Lupin (India).', 5000, 55),
+      d('Glibenclamide', 'Diabetes', 'Manufactured in India by Cipla.', 4000, 30),
+      d('Insulin', 'Diabetes', 'Manufactured in Denmark by Novo Nordisk.', 25000, 10, reorder: 12),
+
+      // 11. Blood Pressure
+      d('Amlodipine', 'Blood Pressure', 'Common manufacturers: Cipla, Lupin (India).', 5000, 60),
+      d('Losartan', 'Blood Pressure', 'Manufactured in India by Sun Pharma.', 6000, 45),
+      d('Enalapril', 'Blood Pressure', 'Manufactured in India by Intas.', 4500, 40),
+      d('Hydrochlorothiazide', 'Blood Pressure', 'Manufactured in India by Cipla.', 3500, 50),
+
+      // 12. Heart
+      d('Atorvastatin', 'Heart', 'Manufactured in India by Sun Pharma.', 8000, 35),
+      d('Clopidogrel', 'Heart', 'Manufactured in India by Lupin.', 9000, 20),
+      d('Furosemide', 'Heart', 'Manufactured in India by Cipla.', 3000, 45),
+
+      // 13. Women's Health
+      d('Oxytocin', "Women's Health", 'Manufactured in India by Neon Laboratories.', 6000, 25, reorder: 10),
+      d('Misoprostol', "Women's Health", 'Manufactured in India by Cipla.', 7000, 20, reorder: 10),
+      d('Folic Acid', "Women's Health", 'Manufactured in Uganda by Rene Industries.', 1500, 80),
+      d('Iron Tablets', "Women's Health", 'Manufactured in Uganda by Rene Industries.', 2000, 90),
+      d('Depo-Provera', "Women's Health", 'Manufactured in Belgium by Pfizer.', 12000, 15, reorder: 12),
+
+      // 14. Children's Medicines
+      d('Paracetamol Syrup', "Children's Medicines", 'Manufactured in Uganda and India by Rene Industries, Cipla.', 3500, 70, discount: 10),
+      d('Amoxicillin Syrup', "Children's Medicines", 'Manufactured in India by Cipla.', 6000, 55),
+      d('Vitamin A', "Children's Medicines", 'Supplied in Uganda via Ministry of Health suppliers.', 0, 100, reorder: 20),
+
+      // 15. Skin Medicines
+      d('Clotrimazole Cream', 'Skin Medicines', 'Manufactured in India by Cipla.', 4000, 40),
+      d('Hydrocortisone Cream', 'Skin Medicines', 'Manufactured in India by Sun Pharma.', 4500, 30),
+      d('Silver Sulfadiazine', 'Skin Medicines', 'Manufactured in India by Alkem.', 6000, 20),
+
+      // 16. Eye & Ear
+      d('Chloramphenicol Eye Drops', 'Eye & Ear', 'Manufactured in India by Cipla.', 3500, 35),
+      d('Gentamicin Eye Drops', 'Eye & Ear', 'Manufactured in India by Intas.', 4000, 25),
+      d('Ciprofloxacin Eye Drops', 'Eye & Ear', 'Manufactured in India by Sun Pharma.', 5000, 20),
+
+      // 17. Vitamins & Supplements
+      d('Vitamin C', 'Vitamins & Supplements', 'Common manufacturers: Himalaya, Cipla (India).', 8000, 65, discount: 20),
+      d('Vitamin B Complex', 'Vitamins & Supplements', 'Manufactured in India by Alkem.', 7000, 55),
+      d('Calcium', 'Vitamins & Supplements', 'Manufactured in India by Cipla.', 6500, 45),
+      d('Multivitamins', 'Vitamins & Supplements', 'Manufactured in Uganda and India by Rene Industries, Cipla.', 12000, 40, discount: 10),
+
+      // 18. Emergency Medicines
+      d('Adrenaline', 'Emergency Medicines', 'Manufactured in Germany by B. Braun.', 15000, 10, reorder: 10),
+      d('Diazepam Injection', 'Emergency Medicines', 'Manufactured in India by Neon Laboratories.', 8000, 15, reorder: 10),
+      d('Atropine', 'Emergency Medicines', 'Manufactured in India by Samarth Life Sciences.', 9000, 12, reorder: 10),
+      d('Magnesium Sulfate', 'Emergency Medicines', 'Manufactured in India by Neon Laboratories.', 5000, 18, reorder: 10),
+      d('Dextrose IV', 'Emergency Medicines', 'Manufactured in Kenya and Uganda by Laboratory & Allied and local IV fluid manufacturers.', 4000, 30, reorder: 15),
     ];
+
     for (final drug in samples) {
       batch.set(_db.collection('drugs').doc(), drug.toMap());
     }
