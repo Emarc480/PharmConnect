@@ -9,7 +9,10 @@
 /// stock_quantity, category (reorder_level is an added field used to
 /// drive low-stock alerts, per FR11). discountPercent is an optional
 /// staff-set promo (0 = no discount) that drives the strikethrough
-/// price and the Home "Offers" rail.
+/// price and the Home "Offers" rail. imageBase64 is an optional photo
+/// staff attach — stored inline the same way PrescriptionRequest
+/// stores its photo, small enough to stay well under Firestore's 1MB
+/// document cap while avoiding a Cloud Storage dependency.
 library;
 
 enum StockStatus { inStock, lowStock, outOfStock }
@@ -23,6 +26,7 @@ class Drug {
   final int stockQuantity;
   final int reorderLevel;
   final int discountPercent;
+  final String? imageBase64;
 
   const Drug({
     required this.id,
@@ -33,6 +37,7 @@ class Drug {
     this.description = '',
     this.reorderLevel = 10,
     this.discountPercent = 0,
+    this.imageBase64,
   });
 
   /// Stock status is always derived from live stockQuantity — never
@@ -48,6 +53,8 @@ class Drug {
   int get unitsAvailable => stockQuantity;
 
   bool get hasDiscount => discountPercent > 0 && discountPercent < 100;
+
+  bool get hasImage => imageBase64 != null && imageBase64!.isNotEmpty;
 
   /// The pre-discount price, derived from the live (already
   /// discounted) `price` — so staff only ever edit one number.
@@ -86,6 +93,7 @@ class Drug {
     int? stockQuantity,
     int? reorderLevel,
     int? discountPercent,
+    String? imageBase64,
   }) {
     return Drug(
       id: id,
@@ -96,6 +104,7 @@ class Drug {
       stockQuantity: stockQuantity ?? this.stockQuantity,
       reorderLevel: reorderLevel ?? this.reorderLevel,
       discountPercent: discountPercent ?? this.discountPercent,
+      imageBase64: imageBase64 ?? this.imageBase64,
     );
   }
 
@@ -109,6 +118,7 @@ class Drug {
       stockQuantity: ((map['stockQuantity'] as num?) ?? 0).toInt(),
       reorderLevel: ((map['reorderLevel'] as num?) ?? 10).toInt(),
       discountPercent: ((map['discountPercent'] as num?) ?? 0).toInt(),
+      imageBase64: map['imageBase64'] as String?,
     );
   }
 
@@ -121,6 +131,7 @@ class Drug {
       'stockQuantity': stockQuantity,
       'reorderLevel': reorderLevel,
       'discountPercent': discountPercent,
+      'imageBase64': imageBase64,
     };
   }
 }
