@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/drug_provider.dart';
 import '../../widgets/drug_card.dart';
 import '../../core/constants/app_routes.dart';
+import '../../core/constants/drug_categories.dart';
 import '../../core/theme/app_theme.dart';
 
 /// The searchable drug catalog — this is the exact content that used
@@ -46,6 +47,13 @@ class StoreTab extends StatelessWidget {
                 final category = drugProvider.categories[i];
                 final isSelected = category == drugProvider.selectedCategory;
                 return ChoiceChip(
+                  avatar: category == 'All'
+                      ? null
+                      : Icon(
+                          categoryIcon(category),
+                          size: 16,
+                          color: isSelected ? Colors.white : categoryColor(category),
+                        ),
                   label: Text(category),
                   selected: isSelected,
                   selectedColor: AppTheme.primaryNavy,
