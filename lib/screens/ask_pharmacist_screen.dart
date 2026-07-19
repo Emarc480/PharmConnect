@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/app_theme.dart';
-import '../models/chat_message.dart';
 import '../providers/auth_provider.dart';
 import '../providers/pharmacist_chat_provider.dart';
+import '../widgets/chat_bubble.dart';
 
 /// "Ask a pharmacist" chat, customer side. Every customer has exactly
 /// one thread (threadId == their uid) that any staff member can see
-/// and reply to from the staff Messages inbox.
+/// and reply to from the staff Messages inbox — live both ways via
+/// PharmacistChatProvider's Firestore stream.
 class AskPharmacistScreen extends StatefulWidget {
   const AskPharmacistScreen({super.key});
 
@@ -76,7 +77,8 @@ class _AskPharmacistScreenState extends State<AskPharmacistScreen> {
                 Row(
                   children: [
                     Container(
-                      width: 7, height: 7,
+                      width: 7,
+                      height: 7,
                       decoration: const BoxDecoration(color: AppTheme.inStockGreen, shape: BoxShape.circle),
                     ),
                     const SizedBox(width: 4),
@@ -103,11 +105,14 @@ class _AskPharmacistScreenState extends State<AskPharmacistScreen> {
                         ),
                       ),
                     )
-                  : ListView.builder(
+                  : ListView(
                       controller: _scrollController,
                       padding: const EdgeInsets.all(16),
-                      itemCount: messages.length,
-                      itemBuilder: (context, i) => _MessageBubble(message: messages[i]),
+                      children: buildChatTimeline(
+                        messages: messages,
+                        isMine: (m) => !m.isStaff,
+                        mineColor: AppTheme.inStockGreen,
+                      ),
                     ),
             ),
             SafeArea(
@@ -148,37 +153,6 @@ class _AskPharmacistScreenState extends State<AskPharmacistScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MessageBubble extends StatelessWidget {
-  final ChatMessage message;
-  const _MessageBubble({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final isMine = !message.isStaff;
-    return Align(
-      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
-        decoration: BoxDecoration(
-          color: isMine ? AppTheme.inStockGreen : Colors.grey.shade100,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(isMine ? 18 : 4),
-            bottomRight: Radius.circular(isMine ? 4 : 18),
-          ),
-        ),
-        child: Text(
-          message.text,
-          style: TextStyle(color: isMine ? Colors.white : Colors.black87),
         ),
       ),
     );

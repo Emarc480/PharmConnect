@@ -1,12 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
+import '../core/constants/drug_categories.dart';
 import '../models/drug.dart';
 
-/// Two-column catalog card: stock pill + wishlist heart over an image
-/// placeholder, name, price (with a struck-through original price
-/// when the drug is discounted), and a full-width "Add to Cart"
-/// button — used on the Home tab's product grid and Offers rail.
+/// Two-column catalog card: stock pill + wishlist heart over the
+/// drug's photo (or a category-colored icon placeholder when none is
+/// set), name, price (with a struck-through original price when the
+/// drug is discounted), and a full-width "Add to Cart" button — used
+/// on the Home tab's product grid and Offers rail.
 class ProductGridCard extends StatelessWidget {
   final Drug drug;
   final bool isWishlisted;
@@ -61,14 +65,21 @@ class ProductGridCard extends StatelessWidget {
               aspectRatio: 1.35,
               child: Stack(
                 children: [
-                  Container(
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                    ),
-                    child: Center(
-                      child: Icon(Icons.medication_outlined, size: 40, color: Colors.grey.shade400),
-                    ),
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: drug.hasImage
+                        ? Image.memory(
+                            base64Decode(drug.imageBase64!),
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            color: categoryColor(drug.category).withValues(alpha: 0.1),
+                            child: Center(
+                              child: Icon(categoryIcon(drug.category), size: 40, color: categoryColor(drug.category)),
+                            ),
+                          ),
                   ),
                   if (drug.hasDiscount)
                     Positioned(

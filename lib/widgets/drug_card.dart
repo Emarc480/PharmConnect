@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../models/drug.dart';
 import '../core/theme/app_theme.dart';
+import '../core/constants/drug_categories.dart';
 
 class DrugCard extends StatelessWidget {
   final Drug drug;
@@ -25,14 +28,16 @@ class DrugCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.medication, color: Colors.grey),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: drug.hasImage
+                  ? Image.memory(base64Decode(drug.imageBase64!), width: 48, height: 48, fit: BoxFit.cover)
+                  : Container(
+                      width: 48,
+                      height: 48,
+                      color: categoryColor(drug.category).withValues(alpha: 0.1),
+                      child: Icon(categoryIcon(drug.category), color: categoryColor(drug.category)),
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(

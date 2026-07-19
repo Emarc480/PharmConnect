@@ -5,6 +5,7 @@ import '../core/theme/app_theme.dart';
 import '../models/chat_message.dart';
 import '../providers/auth_provider.dart';
 import '../providers/pharmacist_chat_provider.dart';
+import '../widgets/chat_bubble.dart';
 
 /// Staff "Patient Messages" inbox — one row per customer thread, tap
 /// to open the full conversation and reply. Threads are grouped
@@ -33,10 +34,6 @@ class StaffMessagesScreen extends StatelessWidget {
               );
             }
 
-            // threadsStream() is already newest-first, so the first
-            // message we see per threadId is the latest one. Separately
-            // track the customer's own name (the latest message might
-            // be a staff reply, not the customer).
             final latestByThread = <String, ChatMessage>{};
             final customerNameByThread = <String, String>{};
             for (final m in all) {
@@ -109,9 +106,8 @@ class StaffMessagesScreen extends StatelessWidget {
   }
 }
 
-/// Full thread view for one customer, staff side. Mirrors
-/// AskPharmacistScreen's bubble UI but sent messages (isStaff: true)
-/// render on the right instead.
+/// Full thread view for one customer, staff side — live both ways via
+/// the same Firestore stream the customer's screen reads.
 class StaffMessageThreadScreen extends StatefulWidget {
   final String threadId;
   final String customerName;
@@ -187,11 +183,14 @@ class _StaffMessageThreadScreenState extends State<StaffMessageThreadScreen> {
                       child: Text('No messages yet', style: TextStyle(color: Colors.grey.shade500)),
                     );
                   }
-                  return ListView.builder(
+                  return ListView(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(16),
-                    itemCount: messages.length,
-                    itemBuilder: (context, i) => _StaffBubble(message: messages[i]),
+                    children: buildChatTimeline(
+                      messages: messages,
+                      isMine: (m) => m.isStaff,
+                      mineColor: AppTheme.primaryNavy,
+                    ),
                   );
                 },
               ),
@@ -234,39 +233,6 @@ class _StaffMessageThreadScreenState extends State<StaffMessageThreadScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StaffBubble extends StatelessWidget {
-  final ChatMessage message;
-  const _StaffBubble({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    // Staff's own replies sit on the right; the customer's messages
-    // sit on the left — the mirror image of the customer's screen.
-    final isMine = message.isStaff;
-    return Align(
-      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
-        decoration: BoxDecoration(
-          color: isMine ? AppTheme.primaryNavy : Colors.grey.shade100,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(isMine ? 18 : 4),
-            bottomRight: Radius.circular(isMine ? 4 : 18),
-          ),
-        ),
-        child: Text(
-          message.text,
-          style: TextStyle(color: isMine ? Colors.white : Colors.black87),
         ),
       ),
     );
