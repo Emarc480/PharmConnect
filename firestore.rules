@@ -44,5 +44,27 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;
       allow update: if isStaff();
     }
+
+    match /prescriptions/{prescriptionId} {
+      allow read: if isStaff() || (isSignedIn() && resource.data.requesterId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;
+      allow update: if isStaff();
+    }
+
+    match /medication_reminders/{reminderId} {
+      allow read, update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    match /pharmacist_messages/{messageId} {
+      allow read: if isStaff() || (isSignedIn() && resource.data.threadId == request.auth.uid);
+      allow create: if isSignedIn() &&
+        request.resource.data.senderId == request.auth.uid &&
+        (isStaff() || request.resource.data.threadId == request.auth.uid);
+    }
+
+    match /wishlists/{userId} {
+      allow read, write: if isOwner(userId);
+    }
   }
 }

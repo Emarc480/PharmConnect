@@ -165,6 +165,59 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _showDiscountSheet(context, drug);
+              },
+              icon: const Icon(Icons.sell_outlined),
+              label: Text(drug.hasDiscount ? 'Edit discount (${drug.discountPercent}%)' : 'Add a discount'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDiscountSheet(BuildContext context, Drug drug) {
+    final controller = TextEditingController(text: drug.discountPercent.toString());
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '${drug.name} — Discount',
+              style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Sets the % shown as a strikethrough on the Home "Offers" rail. Current selling price (${drug.formattedPrice}) stays the same — this only changes the original price shown next to it.',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Discount %  (0 to remove)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () {
+                final value = (int.tryParse(controller.text) ?? 0).clamp(0, 99);
+                context.read<DrugProvider>().updateDrug(drug.copyWith(discountPercent: value));
+                Navigator.pop(sheetContext);
+              },
+              child: const Text('Save'),
+            ),
           ],
         ),
       ),
@@ -236,6 +289,7 @@ class _AddDrugFormState extends State<_AddDrugForm> {
   final _stockController = TextEditingController();
   final _reorderLevelController = TextEditingController();
   final _priceController = TextEditingController();
+  final _discountController = TextEditingController(text: '0');
   bool _isSaving = false;
 
   @override
@@ -245,6 +299,7 @@ class _AddDrugFormState extends State<_AddDrugForm> {
     _stockController.dispose();
     _reorderLevelController.dispose();
     _priceController.dispose();
+    _discountController.dispose();
     super.dispose();
   }
 
@@ -315,6 +370,20 @@ class _AddDrugFormState extends State<_AddDrugForm> {
                 keyboardType: TextInputType.number,
                 validator: _requiredNumber,
               ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _discountController,
+                decoration: const InputDecoration(
+                  labelText: 'Discount % (0 = no offer, shown in Home > Offers)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  final n = int.tryParse(value ?? '0') ?? -1;
+                  if (n < 0 || n > 99) return 'Enter 0–99';
+                  return null;
+                },
+              ),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: _isSaving ? null : _save,
@@ -362,6 +431,7 @@ class _AddDrugFormState extends State<_AddDrugForm> {
             stockQuantity: int.parse(_stockController.text),
             reorderLevel: int.parse(_reorderLevelController.text),
             price: double.parse(_priceController.text),
+            discountPercent: int.tryParse(_discountController.text) ?? 0,
           );
       navigator.pop();
     } catch (_) {

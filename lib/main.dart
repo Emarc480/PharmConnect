@@ -8,6 +8,10 @@ import 'providers/drug_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/refill_provider.dart';
+import 'providers/prescription_provider.dart';
+import 'providers/reminder_provider.dart';
+import 'providers/pharmacist_chat_provider.dart';
+import 'providers/wishlist_provider.dart';
 import 'core/constants/app_routes.dart';
 import 'core/theme/app_theme.dart';
 
@@ -25,6 +29,10 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => RefillProvider()),
+        ChangeNotifierProvider(create: (_) => PrescriptionProvider()),
+        ChangeNotifierProvider(create: (_) => ReminderProvider()),
+        ChangeNotifierProvider(create: (_) => PharmacistChatProvider()),
+        ChangeNotifierProvider(create: (_) => WishlistProvider()),
       ],
       child: const PharmConnectApp(),
     ),

@@ -5,6 +5,23 @@ import 'package:flutter/foundation.dart';
 
 import '../models/drug.dart';
 
+enum DrugSortOption { relevance, priceLowToHigh, priceHighToLow, nameAZ }
+
+extension DrugSortOptionLabel on DrugSortOption {
+  String get label {
+    switch (this) {
+      case DrugSortOption.relevance:
+        return 'Relevance';
+      case DrugSortOption.priceLowToHigh:
+        return 'Price: Low to High';
+      case DrugSortOption.priceHighToLow:
+        return 'Price: High to Low';
+      case DrugSortOption.nameAZ:
+        return 'Name: A to Z';
+    }
+  }
+}
+
 /// Single provider for the `drugs` Firestore collection, used by BOTH
 /// the customer catalog (Home/Browse, Drug Detail) and the staff
 /// Inventory screen. This replaces the old DrugProvider + separate
@@ -29,11 +46,13 @@ class DrugProvider extends ChangeNotifier {
   List<Drug> _drugs = [];
   String _searchQuery = '';
   String _selectedCategory = 'All';
+  DrugSortOption _sortOption = DrugSortOption.relevance;
   bool _isLoading = true;
 
   bool get isLoading => _isLoading;
   String get searchQuery => _searchQuery;
   String get selectedCategory => _selectedCategory;
+  DrugSortOption get sortOption => _sortOption;
 
   List<String> get categories => [
         'All',
@@ -43,14 +62,33 @@ class DrugProvider extends ChangeNotifier {
   List<Drug> get allDrugs => List.unmodifiable(_drugs);
 
   List<Drug> get filteredDrugs {
-    return _drugs.where((drug) {
+    final results = _drugs.where((drug) {
       final matchesSearch =
           drug.name.toLowerCase().contains(_searchQuery.toLowerCase());
       final matchesCategory =
           _selectedCategory == 'All' || drug.category == _selectedCategory;
       return matchesSearch && matchesCategory;
     }).toList();
+
+    switch (_sortOption) {
+      case DrugSortOption.relevance:
+        break;
+      case DrugSortOption.priceLowToHigh:
+        results.sort((a, b) => a.price.compareTo(b.price));
+        break;
+      case DrugSortOption.priceHighToLow:
+        results.sort((a, b) => b.price.compareTo(a.price));
+        break;
+      case DrugSortOption.nameAZ:
+        results.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        break;
+    }
+    return results;
   }
+
+  /// Drugs staff have put on promotion — powers the Home "Offers" rail.
+  List<Drug> get discountedDrugs =>
+      List.unmodifiable(_drugs.where((d) => d.hasDiscount));
 
   int get lowStockCount => _drugs.where((d) => d.isLowStock).length;
 
@@ -73,6 +111,11 @@ class DrugProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setSortOption(DrugSortOption option) {
+    _sortOption = option;
+    notifyListeners();
+  }
+
   Drug? byId(String id) {
     try {
       return _drugs.firstWhere((d) => d.id == id);
@@ -88,6 +131,7 @@ class DrugProvider extends ChangeNotifier {
     required int reorderLevel,
     required double price,
     String description = '',
+    int discountPercent = 0,
   }) async {
     final drug = Drug(
       id: '',
@@ -97,6 +141,7 @@ class DrugProvider extends ChangeNotifier {
       price: price,
       stockQuantity: stockQuantity,
       reorderLevel: reorderLevel,
+      discountPercent: discountPercent,
     );
     await _db.collection('drugs').add(drug.toMap());
     // The snapshot listener above will update _drugs automatically.
@@ -132,15 +177,15 @@ class DrugProvider extends ChangeNotifier {
     if (_drugs.isNotEmpty) return;
     final batch = _db.batch();
     final samples = <Drug>[
-      const Drug(id: '', name: 'Paracetamol 500mg', category: 'Pain Relief', price: 2000, stockQuantity: 120, reorderLevel: 20, description: 'Pain and fever relief tablets.'),
+      const Drug(id: '', name: 'Paracetamol 500mg', category: 'Pain Relief', price: 2000, stockQuantity: 120, reorderLevel: 20, description: 'Pain and fever relief tablets.', discountPercent: 15),
       const Drug(id: '', name: 'Ibuprofen 400mg', category: 'Pain Relief', price: 3500, stockQuantity: 8, reorderLevel: 15, description: 'Anti-inflammatory pain reliever.'),
       const Drug(id: '', name: 'Aspirin 300mg', category: 'Pain Relief', price: 1500, stockQuantity: 60, reorderLevel: 15, description: 'Pain relief and blood thinner.'),
       const Drug(id: '', name: 'Amoxicillin 500mg', category: 'Antibiotics', price: 8000, stockQuantity: 40, reorderLevel: 10, description: 'Broad-spectrum antibiotic capsules.'),
       const Drug(id: '', name: 'Metronidazole 400mg', category: 'Antibiotics', price: 6000, stockQuantity: 0, reorderLevel: 10, description: 'Antibiotic for bacterial infections.'),
       const Drug(id: '', name: 'Doxycycline 100mg', category: 'Antibiotics', price: 9500, stockQuantity: 25, reorderLevel: 10, description: 'Antibiotic for a range of infections.'),
-      const Drug(id: '', name: 'Vitamin C 1000mg', category: 'Vitamins', price: 12000, stockQuantity: 75, reorderLevel: 15, description: 'Immune support supplement.'),
+      const Drug(id: '', name: 'Vitamin C 1000mg', category: 'Vitamins', price: 12000, stockQuantity: 75, reorderLevel: 15, description: 'Immune support supplement.', discountPercent: 20),
       const Drug(id: '', name: 'Multivitamin Complex', category: 'Vitamins', price: 18000, stockQuantity: 30, reorderLevel: 10, description: 'Daily multivitamin and mineral tablets.'),
-      const Drug(id: '', name: 'Vitamin D3 1000IU', category: 'Vitamins', price: 15000, stockQuantity: 9, reorderLevel: 10, description: 'Bone and immune health supplement.'),
+      const Drug(id: '', name: 'Vitamin D3 1000IU', category: 'Vitamins', price: 15000, stockQuantity: 9, reorderLevel: 10, description: 'Bone and immune health supplement.', discountPercent: 10),
       const Drug(id: '', name: 'Cough Syrup', category: 'Cold & Flu', price: 7000, stockQuantity: 45, reorderLevel: 10, description: 'Relieves cough and throat irritation.'),
       const Drug(id: '', name: 'Antihistamine Tablets', category: 'Cold & Flu', price: 4000, stockQuantity: 55, reorderLevel: 10, description: 'Allergy and cold symptom relief.'),
       const Drug(id: '', name: 'ORS Sachets', category: 'Cold & Flu', price: 1000, stockQuantity: 100, reorderLevel: 20, description: 'Oral rehydration salts.'),
