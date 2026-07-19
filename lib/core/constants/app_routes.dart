@@ -14,6 +14,11 @@ import '../../screens/orders_list_screen.dart';
 import '../../screens/refill_request_screen.dart';
 import '../../screens/refill_management_screen.dart';
 import '../../screens/profile_screen.dart';
+import '../../screens/prescription_upload_screen.dart';
+import '../../screens/reminders_screen.dart';
+import '../../screens/ask_pharmacist_screen.dart';
+import '../../screens/staff_messages_screen.dart';
+import '../../screens/prescription_management_screen.dart';
 import '../../widgets/role_guard.dart';
 
 class AppRoutes {
@@ -32,6 +37,11 @@ class AppRoutes {
   static const String refill = '/refill';
   static const String refillManagement = '/refill-management';
   static const String profile = '/profile';
+  static const String prescription = '/prescription';
+  static const String reminders = '/reminders';
+  static const String askPharmacist = '/ask-pharmacist';
+  static const String staffMessages = '/staff-messages';
+  static const String prescriptionManagement = '/prescription-management';
 
   static Map<String, WidgetBuilder> routes = {
     splash: (context) => const AuthGate(),
@@ -45,6 +55,11 @@ class AppRoutes {
     refill: (context) => const RefillRequestScreen(),
     refillManagement: (context) => const StaffOnly(child: RefillManagementScreen()),
     profile: (context) => const ProfileScreen(),
+    prescription: (context) => const PrescriptionUploadScreen(),
+    reminders: (context) => const RemindersScreen(),
+    askPharmacist: (context) => const AskPharmacistScreen(),
+    staffMessages: (context) => const StaffOnly(child: StaffMessagesScreen()),
+    prescriptionManagement: (context) => const StaffOnly(child: PrescriptionManagementScreen()),
   };
 
   /// Handles routes that need arguments (drug object, order id).

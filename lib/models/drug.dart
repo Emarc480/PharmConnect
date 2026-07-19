@@ -7,7 +7,9 @@
 ///
 /// Matches the ERD's DRUG entity: drug_id, name, description, price,
 /// stock_quantity, category (reorder_level is an added field used to
-/// drive low-stock alerts, per FR11).
+/// drive low-stock alerts, per FR11). discountPercent is an optional
+/// staff-set promo (0 = no discount) that drives the strikethrough
+/// price and the Home "Offers" rail.
 library;
 
 enum StockStatus { inStock, lowStock, outOfStock }
@@ -20,6 +22,7 @@ class Drug {
   final double price;
   final int stockQuantity;
   final int reorderLevel;
+  final int discountPercent;
 
   const Drug({
     required this.id,
@@ -29,6 +32,7 @@ class Drug {
     required this.stockQuantity,
     this.description = '',
     this.reorderLevel = 10,
+    this.discountPercent = 0,
   });
 
   /// Stock status is always derived from live stockQuantity — never
@@ -43,8 +47,19 @@ class Drug {
 
   int get unitsAvailable => stockQuantity;
 
-  String get formattedPrice {
-    final s = price.round().toString();
+  bool get hasDiscount => discountPercent > 0 && discountPercent < 100;
+
+  /// The pre-discount price, derived from the live (already
+  /// discounted) `price` — so staff only ever edit one number.
+  double get originalPrice =>
+      hasDiscount ? price / (1 - (discountPercent / 100)) : price;
+
+  String get formattedPrice => _formatUgx(price);
+
+  String get formattedOriginalPrice => _formatUgx(originalPrice);
+
+  String _formatUgx(double amount) {
+    final s = amount.round().toString();
     final withCommas = s.replaceAllMapped(
       RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
       (m) => '${m[1]},',
@@ -70,6 +85,7 @@ class Drug {
     double? price,
     int? stockQuantity,
     int? reorderLevel,
+    int? discountPercent,
   }) {
     return Drug(
       id: id,
@@ -79,6 +95,7 @@ class Drug {
       price: price ?? this.price,
       stockQuantity: stockQuantity ?? this.stockQuantity,
       reorderLevel: reorderLevel ?? this.reorderLevel,
+      discountPercent: discountPercent ?? this.discountPercent,
     );
   }
 
@@ -91,6 +108,7 @@ class Drug {
       price: ((map['price'] as num?) ?? 0).toDouble(),
       stockQuantity: ((map['stockQuantity'] as num?) ?? 0).toInt(),
       reorderLevel: ((map['reorderLevel'] as num?) ?? 10).toInt(),
+      discountPercent: ((map['discountPercent'] as num?) ?? 0).toInt(),
     );
   }
 
@@ -102,6 +120,7 @@ class Drug {
       'price': price,
       'stockQuantity': stockQuantity,
       'reorderLevel': reorderLevel,
+      'discountPercent': discountPercent,
     };
   }
 }
