@@ -4,7 +4,7 @@ import '../../models/drug.dart';
 import '../../screens/auth/auth_gate.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/home/home_screen.dart';
-import '../../screens/staff_dashboard.dart';
+import '../../screens/staff_home_shell.dart';
 import '../../screens/inventory_screen.dart';
 import '../../screens/drug_detail_screen.dart';
 import '../../screens/cart_screen.dart';
@@ -47,7 +47,7 @@ class AppRoutes {
     splash: (context) => const AuthGate(),
     login: (context) => const LoginScreen(),
     home: (context) => const HomeScreen(),
-    staffDashboard: (context) => const StaffOnly(child: StaffDashboard()),
+    staffDashboard: (context) => const StaffOnly(child: StaffHomeShell()),
     inventory: (context) => const StaffOnly(child: InventoryScreen()),
     orders: (context) => const StaffOnly(child: OrderManagementScreen()),
     cart: (context) => const CartScreen(),
