@@ -100,7 +100,7 @@ class PrescriptionProvider extends ChangeNotifier {
   }) async {
     await _db.collection('prescriptions').doc(id).update({
       'status': status.name,
-      if (pharmacistNote != null) 'pharmacistNote': pharmacistNote,
+      'pharmacistNote': ?pharmacistNote,
     });
   }
 
