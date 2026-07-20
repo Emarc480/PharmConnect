@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 
 import '../models/drug.dart';
 import '../providers/drug_provider.dart';
-import '../core/constants/app_routes.dart';
 import '../core/constants/drug_categories.dart';
 
 class InventoryScreen extends StatefulWidget {
@@ -106,35 +105,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         for (final drug in drugs)
                           _InventoryRow(
                             drug: drug,
-                            onEdit: () => _showEditStockSheet(context, drug),
+                            onEdit: () => _showEditDrugSheet(context, drug),
                           ),
                       ],
                     ),
                   ),
                 ],
               ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 1,
-        onDestinationSelected: (index) {
-          switch (index) {
-            case 0:
-              Navigator.pop(context);
-              break;
-            case 2:
-              Navigator.pushNamed(context, AppRoutes.orders);
-              break;
-            case 3:
-              Navigator.pushNamed(context, AppRoutes.profile);
-              break;
-          }
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
-          NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: 'Inventory'),
-          NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Orders'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
-        ],
       ),
     );
   }
@@ -143,160 +120,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => const _AddDrugForm(),
+      builder: (context) => const _DrugForm(),
     );
   }
 
-  void _showEditStockSheet(BuildContext context, Drug drug) {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              drug.name,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 6),
-            Text('${drug.stockQuantity} units currently in stock'),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      context.read<DrugProvider>().adjustStock(drug.id, -1);
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.remove),
-                    label: const Text('Reduce'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      context.read<DrugProvider>().adjustStock(drug.id, 1);
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Increase'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                _showDiscountSheet(context, drug);
-              },
-              icon: const Icon(Icons.sell_outlined),
-              label: Text(drug.hasDiscount ? 'Edit discount (${drug.discountPercent}%)' : 'Add a discount'),
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                _showPhotoPicker(context, drug);
-              },
-              icon: const Icon(Icons.photo_camera_outlined),
-              label: Text(drug.hasImage ? 'Change photo' : 'Add a photo'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showDiscountSheet(BuildContext context, Drug drug) {
-    final controller = TextEditingController(text: drug.discountPercent.toString());
+  /// Opens the same form used to add a drug, pre-filled with this
+  /// drug's current details so staff can edit name, category, stock,
+  /// reorder level, price, discount and photo in one place, or delete
+  /// the drug entirely.
+  void _showEditDrugSheet(BuildContext context, Drug drug) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              '${drug.name} — Discount',
-              style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Sets the % shown as a strikethrough on the Home "Offers" rail. Current selling price (${drug.formattedPrice}) stays the same — this only changes the original price shown next to it.',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Discount %  (0 to remove)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () {
-                final value = (int.tryParse(controller.text) ?? 0).clamp(0, 99);
-                context.read<DrugProvider>().updateDrug(drug.copyWith(discountPercent: value));
-                Navigator.pop(sheetContext);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      ),
+      builder: (context) => _DrugForm(existingDrug: drug),
     );
-  }
-
-  /// Picks a photo (camera or gallery), then writes it straight to
-  /// Firestore as base64 on that one drug. DrugProvider reference is
-  /// grabbed before the first await so nothing touches `context`
-  /// across an async gap.
-  Future<void> _showPhotoPicker(BuildContext context, Drug drug) async {
-    final drugProvider = context.read<DrugProvider>();
-
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (sheetContext) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take a photo'),
-              onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
-              onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (source == null || !context.mounted) return;
-
-    try {
-      final picked = await ImagePicker().pickImage(source: source, maxWidth: 800, imageQuality: 60);
-      if (picked == null) return;
-      final bytes = await File(picked.path).readAsBytes();
-      final imageBase64 = base64Encode(bytes);
-      await drugProvider.updateDrug(drug.copyWith(imageBase64: imageBase64));
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not update photo: $e')),
-      );
-    }
   }
 }
 
@@ -313,64 +150,90 @@ class _InventoryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 9),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: drug.hasImage
-                ? Image.memory(base64Decode(drug.imageBase64!), width: 44, height: 44, fit: BoxFit.cover)
-                : Container(
-                    width: 44,
-                    height: 44,
-                    color: categoryColor(drug.category).withValues(alpha: 0.1),
-                    child: Icon(categoryIcon(drug.category), color: categoryColor(drug.category)),
-                  ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  drug.name,
-                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${drug.stockQuantity} units',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: drug.isLowStock ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+    return InkWell(
+      onTap: onEdit,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: drug.hasImage
+                  ? Image.memory(base64Decode(drug.imageBase64!), width: 44, height: 44, fit: BoxFit.cover)
+                  : Container(
+                      width: 44,
+                      height: 44,
+                      color: categoryColor(drug.category).withValues(alpha: 0.1),
+                      child: Icon(categoryIcon(drug.category), color: categoryColor(drug.category)),
+                    ),
             ),
-          ),
-          TextButton(onPressed: onEdit, child: const Text('Edit')),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    drug.name,
+                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${drug.stockQuantity} units',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: drug.isLowStock ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.grey.shade400),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _AddDrugForm extends StatefulWidget {
-  const _AddDrugForm();
+/// One form for both "Add drug" and "Edit drug". Pass [existingDrug] to
+/// pre-fill every field for editing (name, category, stock, reorder
+/// level, price, discount, photo) and to enable the delete action;
+/// leave it null to add a brand-new drug.
+class _DrugForm extends StatefulWidget {
+  const _DrugForm({this.existingDrug});
+
+  final Drug? existingDrug;
+
+  bool get isEditing => existingDrug != null;
 
   @override
-  State<_AddDrugForm> createState() => _AddDrugFormState();
+  State<_DrugForm> createState() => _DrugFormState();
 }
 
-class _AddDrugFormState extends State<_AddDrugForm> {
+class _DrugFormState extends State<_DrugForm> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _stockController = TextEditingController();
-  final _reorderLevelController = TextEditingController();
-  final _priceController = TextEditingController();
-  String _category = kDrugCategories.first;
+  late final _nameController = TextEditingController(text: widget.existingDrug?.name ?? '');
+  late final _stockController =
+      TextEditingController(text: widget.existingDrug?.stockQuantity.toString() ?? '');
+  late final _reorderLevelController =
+      TextEditingController(text: widget.existingDrug?.reorderLevel.toString() ?? '');
+  late final _priceController =
+      TextEditingController(text: widget.existingDrug?.price.toStringAsFixed(0) ?? '');
+  late final _discountController =
+      TextEditingController(text: widget.existingDrug?.discountPercent.toString() ?? '0');
+  late String _category = widget.existingDrug?.category ?? kDrugCategories.first;
+
+  /// A freshly picked photo (camera/gallery), overriding whatever
+  /// photo the drug already had.
   File? _pickedImage;
+
+  /// True once staff explicitly remove the existing photo without
+  /// picking a new one.
+  bool _removeExistingPhoto = false;
+
   bool _isSaving = false;
+  bool _isDeleting = false;
 
   @override
   void dispose() {
@@ -378,14 +241,20 @@ class _AddDrugFormState extends State<_AddDrugForm> {
     _stockController.dispose();
     _reorderLevelController.dispose();
     _priceController.dispose();
+    _discountController.dispose();
     super.dispose();
   }
+
+  bool get _hasExistingPhoto => widget.existingDrug?.hasImage ?? false;
 
   Future<void> _pickImage(ImageSource source) async {
     try {
       final picked = await ImagePicker().pickImage(source: source, maxWidth: 800, imageQuality: 60);
       if (picked != null) {
-        setState(() => _pickedImage = File(picked.path));
+        setState(() {
+          _pickedImage = File(picked.path);
+          _removeExistingPhoto = false;
+        });
       }
     } catch (_) {
       if (!mounted) return;
@@ -396,6 +265,7 @@ class _AddDrugFormState extends State<_AddDrugForm> {
   }
 
   void _showSourceSheet() {
+    final canRemove = _pickedImage != null || (_hasExistingPhoto && !_removeExistingPhoto);
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
@@ -418,6 +288,18 @@ class _AddDrugFormState extends State<_AddDrugForm> {
                 _pickImage(ImageSource.gallery);
               },
             ),
+            if (canRemove)
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('Remove photo', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  setState(() {
+                    _pickedImage = null;
+                    _removeExistingPhoto = true;
+                  });
+                },
+              ),
           ],
         ),
       ),
@@ -427,6 +309,7 @@ class _AddDrugFormState extends State<_AddDrugForm> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final showExistingPhoto = _hasExistingPhoto && !_removeExistingPhoto && _pickedImage == null;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset + 16),
@@ -438,7 +321,7 @@ class _AddDrugFormState extends State<_AddDrugForm> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Add drug',
+                widget.isEditing ? 'Edit drug' : 'Add drug',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 16),
@@ -451,19 +334,28 @@ class _AddDrugFormState extends State<_AddDrugForm> {
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: _pickedImage == null
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_a_photo_outlined, color: Colors.grey.shade500),
-                            const SizedBox(height: 6),
-                            Text('Add a photo (optional)', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                          ],
-                        )
-                      : ClipRRect(
+                  child: _pickedImage != null
+                      ? ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: Image.file(_pickedImage!, width: double.infinity, fit: BoxFit.cover),
-                        ),
+                        )
+                      : showExistingPhoto
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.memory(
+                                base64Decode(widget.existingDrug!.imageBase64!),
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_a_photo_outlined, color: Colors.grey.shade500),
+                                const SizedBox(height: 6),
+                                Text('Add a photo (optional)', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                              ],
+                            ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -515,13 +407,38 @@ class _AddDrugFormState extends State<_AddDrugForm> {
                 keyboardType: TextInputType.number,
                 validator: _requiredNumber,
               ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _discountController,
+                decoration: const InputDecoration(
+                  labelText: 'Discount %  (0 for none)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                validator: _requiredNumber,
+              ),
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: _isSaving ? null : _save,
+                onPressed: _isSaving || _isDeleting ? null : _save,
                 child: _isSaving
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Save drug'),
+                    : Text(widget.isEditing ? 'Save changes' : 'Save drug'),
               ),
+              if (widget.isEditing) ...[
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: _isSaving || _isDeleting ? null : _confirmDelete,
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red)),
+                  icon: _isDeleting
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red),
+                        )
+                      : const Icon(Icons.delete_outline),
+                  label: const Text('Delete drug'),
+                ),
+              ],
             ],
           ),
         ),
@@ -547,25 +464,84 @@ class _AddDrugFormState extends State<_AddDrugForm> {
     final navigator = Navigator.of(context);
     final drugProvider = context.read<DrugProvider>();
     try {
+      // Resolve the final photo: a newly picked file wins, otherwise
+      // keep the existing one unless it was explicitly removed.
       String? imageBase64;
       if (_pickedImage != null) {
         final bytes = await _pickedImage!.readAsBytes();
         imageBase64 = base64Encode(bytes);
+      } else if (!_removeExistingPhoto) {
+        imageBase64 = widget.existingDrug?.imageBase64;
       }
-      await drugProvider.addDrug(
+
+      final existing = widget.existingDrug;
+      if (existing == null) {
+        await drugProvider.addDrug(
+          name: _nameController.text.trim(),
+          category: _category,
+          stockQuantity: int.parse(_stockController.text),
+          reorderLevel: int.parse(_reorderLevelController.text),
+          price: double.parse(_priceController.text),
+          discountPercent: int.parse(_discountController.text).clamp(0, 99),
+          imageBase64: imageBase64,
+        );
+      } else {
+        await drugProvider.updateDrug(
+          Drug(
+            id: existing.id,
             name: _nameController.text.trim(),
+            description: existing.description,
             category: _category,
+            price: double.parse(_priceController.text),
             stockQuantity: int.parse(_stockController.text),
             reorderLevel: int.parse(_reorderLevelController.text),
-            price: double.parse(_priceController.text),
+            discountPercent: int.parse(_discountController.text).clamp(0, 99),
             imageBase64: imageBase64,
-          );
+          ),
+        );
+      }
       navigator.pop();
     } catch (_) {
       if (mounted) {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not save drug. Please try again.')),
+          SnackBar(content: Text('Could not save ${widget.isEditing ? 'changes' : 'drug'}. Please try again.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    final existing = widget.existingDrug;
+    if (existing == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete drug?'),
+        content: Text('This permanently removes "${existing.name}" from inventory. This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isDeleting = true);
+    final navigator = Navigator.of(context);
+    final drugProvider = context.read<DrugProvider>();
+    try {
+      await drugProvider.deleteDrug(existing.id);
+      navigator.pop();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isDeleting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not delete drug. Please try again.')),
         );
       }
     }

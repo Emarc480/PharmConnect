@@ -91,17 +91,24 @@ class _DashboardTabState extends State<DashboardTab> {
                     child: Text('Sort by', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                   ),
                 ),
-                for (final option in DrugSortOption.values)
-                  RadioListTile<DrugSortOption>(
-                    value: option,
-                    groupValue: drugProvider.sortOption,
-                    title: Text(option.label),
-                    activeColor: AppTheme.primaryNavy,
-                    onChanged: (value) {
-                      if (value != null) drugProvider.setSortOption(value);
-                      Navigator.pop(sheetContext);
-                    },
+                RadioGroup<DrugSortOption>(
+                  groupValue: drugProvider.sortOption,
+                  onChanged: (value) {
+                    if (value != null) drugProvider.setSortOption(value);
+                    Navigator.pop(sheetContext);
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final option in DrugSortOption.values)
+                        RadioListTile<DrugSortOption>(
+                          value: option,
+                          title: Text(option.label),
+                          activeColor: AppTheme.primaryNavy,
+                        ),
+                    ],
                   ),
+                ),
               ],
             ),
           ),

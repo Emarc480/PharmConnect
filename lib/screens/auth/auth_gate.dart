@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/app_user.dart';
 import '../../providers/auth_provider.dart';
 import '../home/home_screen.dart';
-import '../staff_dashboard.dart';
+import '../staff_home_shell.dart';
 import 'login_screen.dart';
 
 /// The app's actual root content (mounted at AppRoutes.splash = '/').
@@ -16,7 +16,7 @@ import 'login_screen.dart';
 ///   - unknown          -> a brief splash while Firebase restores the
 ///                         cached session from disk
 ///   - unauthenticated   -> LoginScreen
-///   - authenticated     -> HomeScreen (customer) or StaffDashboard
+///   - authenticated     -> HomeScreen (customer) or StaffHomeShell
 ///                         (staff), chosen by the user's stored role —
 ///                         there is no way to land on the wrong one.
 ///
@@ -47,7 +47,7 @@ class AuthGate extends StatelessWidget {
           );
         }
         return user.role == UserRole.staff
-            ? const StaffDashboard()
+            ? const StaffHomeShell()
             : const HomeScreen();
     }
   }
