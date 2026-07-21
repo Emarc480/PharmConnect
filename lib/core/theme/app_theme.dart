@@ -33,4 +33,12 @@ class AppTheme {
     ),
     inputDecorationTheme: const InputDecorationTheme(border: UnderlineInputBorder()),
   );
+
+  static Color navBarSurface(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF1E1E1E)
+        : Colors.white;
+  }
+
+  static const double navBarClearance = 100;
 }
