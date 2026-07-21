@@ -12,14 +12,13 @@ import 'providers/prescription_provider.dart';
 import 'providers/reminder_provider.dart';
 import 'providers/pharmacist_chat_provider.dart';
 import 'providers/wishlist_provider.dart';
+import 'providers/theme_mode_provider.dart';
 import 'core/constants/app_routes.dart';
 import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(
     MultiProvider(
@@ -27,6 +26,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DrugProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeModeProvider()),
         // OrderProvider/RefillProvider need to know the signed-in
         // user's uid + role to build a query that satisfies Firestore
         // security rules (customers can only list their own docs).
@@ -34,13 +34,15 @@ Future<void> main() async {
         // which restarts the Firestore listener with the right query.
         ChangeNotifierProxyProvider<AuthProvider, OrderProvider>(
           create: (_) => OrderProvider(),
-          update: (_, auth, order) => order!
-            ..updateAuth(uid: auth.currentUser?.uid, isStaff: auth.isStaff),
+          update: (_, auth, order) =>
+              order!
+                ..updateAuth(uid: auth.currentUser?.uid, isStaff: auth.isStaff),
         ),
         ChangeNotifierProxyProvider<AuthProvider, RefillProvider>(
           create: (_) => RefillProvider(),
-          update: (_, auth, refill) => refill!
-            ..updateAuth(uid: auth.currentUser?.uid, isStaff: auth.isStaff),
+          update: (_, auth, refill) =>
+              refill!
+                ..updateAuth(uid: auth.currentUser?.uid, isStaff: auth.isStaff),
         ),
         ChangeNotifierProvider(create: (_) => PrescriptionProvider()),
         ChangeNotifierProvider(create: (_) => ReminderProvider()),
@@ -57,6 +59,8 @@ class PharmConnectApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = context.watch<ThemeModeProvider>().themeMode;
+    
     return MaterialApp(
       title: 'PharmConnect',
       debugShowCheckedModeBanner: false,
@@ -68,6 +72,8 @@ class PharmConnectApp extends StatelessWidget {
       initialRoute: AppRoutes.splash,
       routes: AppRoutes.routes,
       onGenerateRoute: AppRoutes.onGenerateRoute,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
     );
   }
 }

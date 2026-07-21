@@ -94,6 +94,12 @@ class ProfileScreen extends StatelessWidget {
                         onTap: () => Navigator.pushNamed(context, AppRoutes.askPharmacist),
                         isLast: true,
                       ),
+                      _MenuTile(
+                        icon: Icons.settings_outlined,
+                        label: 'App Settings',
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.appSettings),
+                        isLast: true,
+                      ),
                     ],
             ),
             const SizedBox(height: 24),
