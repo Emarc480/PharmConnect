@@ -24,6 +24,18 @@ class StaffMessagesScreen extends StatelessWidget {
         child: StreamBuilder<List<ChatMessage>>(
           stream: chatProvider.threadsStream(),
           builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Padding(
+                padding: const EdgeInsets.all(24),
+                child: Center(
+                  child: Text(
+                    "Couldn't load messages:\n${snapshot.error}",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12.5),
+                  ),
+                ),
+              );
+            }
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
@@ -173,6 +185,25 @@ class _StaffMessageThreadScreenState extends State<StaffMessageThreadScreen> {
               child: StreamBuilder<List<ChatMessage>>(
                 stream: chatProvider.messagesStream(widget.threadId),
                 builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.error_outline, color: Colors.grey.shade400, size: 32),
+                            const SizedBox(height: 10),
+                            Text(
+                              "Couldn't load this conversation:\n${snapshot.error}",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey.shade500, fontSize: 12.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }

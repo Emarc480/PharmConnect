@@ -6,20 +6,19 @@ import 'package:flutter/foundation.dart';
 
 import '../models/refill_request.dart';
 
+/// Security rules only let a customer read their own `refill_requests`
+/// docs, so the query must be scoped server-side with a `.where()` for
+/// non-staff users — see the matching note on OrderProvider.
+/// [updateAuth] is driven from a ChangeNotifierProxyProvider in
+/// main.dart.
 class RefillProvider extends ChangeNotifier {
-  RefillProvider() {
-    _sub = _db
-        .collection('refill_requests')
-        .orderBy('requestDateMs', descending: true)
-        .snapshots()
-        .listen(_onSnapshot, onError: (_) {});
-  }
-
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  late final StreamSubscription<QuerySnapshot<Map<String, dynamic>>> _sub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _sub;
 
   List<RefillRequest> _requests = [];
   bool _isLoading = true;
+  String? _uid;
+  bool _isStaff = false;
 
   bool get isLoading => _isLoading;
 
@@ -32,6 +31,43 @@ class RefillProvider extends ChangeNotifier {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const [];
     return _requests.where((r) => r.requesterId == uid).toList();
+  }
+
+  /// Restarts the Firestore listener with a query matching the current
+  /// user's role. Call this whenever auth state (uid or isStaff)
+  /// changes; a no-op if nothing actually changed.
+  void updateAuth({required String? uid, required bool isStaff}) {
+    if (_uid == uid && _isStaff == isStaff) return;
+    _uid = uid;
+    _isStaff = isStaff;
+    _listen();
+  }
+
+  void _listen() {
+    _sub?.cancel();
+    if (_uid == null) {
+      _requests = [];
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    _isLoading = true;
+    notifyListeners();
+
+    final Query<Map<String, dynamic>> query = _isStaff
+        ? _db
+            .collection('refill_requests')
+            .orderBy('requestDateMs', descending: true)
+        : _db
+            .collection('refill_requests')
+            .where('requesterId', isEqualTo: _uid)
+            .orderBy('requestDateMs', descending: true);
+
+    _sub = query.snapshots().listen(_onSnapshot, onError: (_) {
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 
   int get pendingCount =>
@@ -73,7 +109,7 @@ class RefillProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _sub.cancel();
+    _sub?.cancel();
     super.dispose();
   }
 }

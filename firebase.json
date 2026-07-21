@@ -1,1 +1,25 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"pharmconnect-76495","appId":"1:350268247024:android:9d77968d1a844ca583eb35","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"pharmconnect-76495","configurations":{"android":"1:350268247024:android:9d77968d1a844ca583eb35"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "pharmconnect-76495",
+          "appId": "1:350268247024:android:9d77968d1a844ca583eb35",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "pharmconnect-76495",
+          "configurations": {
+            "android": "1:350268247024:android:9d77968d1a844ca583eb35"
+          }
+        }
+      }
+    }
+  }
+}

@@ -21,8 +21,10 @@ class PharmacistChatProvider extends ChangeNotifier {
 
   List<ChatMessage> _myMessages = [];
   bool _isLoading = true;
+  String? _error;
 
   bool get isLoading => _isLoading;
+  String? get error => _error;
   List<ChatMessage> get myMessages => List.unmodifiable(_myMessages);
 
   void _onAuthChanged(User? user) {
@@ -30,21 +32,32 @@ class PharmacistChatProvider extends ChangeNotifier {
     if (user == null) {
       _myMessages = [];
       _isLoading = false;
+      _error = null;
       notifyListeners();
       return;
     }
     _isLoading = true;
+    _error = null;
     _sub = _db
         .collection('pharmacist_messages')
         .where('threadId', isEqualTo: user.uid)
         .orderBy('sentAtMs')
         .snapshots()
-        .listen(_onSnapshot, onError: (_) {});
+        .listen(_onSnapshot, onError: _onStreamError);
   }
 
   void _onSnapshot(QuerySnapshot<Map<String, dynamic>> snapshot) {
     _myMessages = snapshot.docs.map((d) => ChatMessage.fromMap(d.id, d.data())).toList();
     _isLoading = false;
+    _error = null;
+    notifyListeners();
+  }
+
+  void _onStreamError(Object e) {
+    // Surface it instead of hanging silently forever (e.g. a missing
+    // Firestore composite index shows up here as failed-precondition).
+    _isLoading = false;
+    _error = e.toString();
     notifyListeners();
   }
 

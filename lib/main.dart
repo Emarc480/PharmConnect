@@ -27,8 +27,21 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DrugProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
-        ChangeNotifierProvider(create: (_) => OrderProvider()),
-        ChangeNotifierProvider(create: (_) => RefillProvider()),
+        // OrderProvider/RefillProvider need to know the signed-in
+        // user's uid + role to build a query that satisfies Firestore
+        // security rules (customers can only list their own docs).
+        // The proxy re-runs updateAuth() whenever AuthProvider changes,
+        // which restarts the Firestore listener with the right query.
+        ChangeNotifierProxyProvider<AuthProvider, OrderProvider>(
+          create: (_) => OrderProvider(),
+          update: (_, auth, order) => order!
+            ..updateAuth(uid: auth.currentUser?.uid, isStaff: auth.isStaff),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, RefillProvider>(
+          create: (_) => RefillProvider(),
+          update: (_, auth, refill) => refill!
+            ..updateAuth(uid: auth.currentUser?.uid, isStaff: auth.isStaff),
+        ),
         ChangeNotifierProvider(create: (_) => PrescriptionProvider()),
         ChangeNotifierProvider(create: (_) => ReminderProvider()),
         ChangeNotifierProvider(create: (_) => PharmacistChatProvider()),
