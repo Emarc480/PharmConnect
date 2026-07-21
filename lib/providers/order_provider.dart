@@ -9,20 +9,22 @@ import '../models/order.dart';
 /// Firestore-backed order history. `orders` (all orders, newest first)
 /// is what staff screens use; `myOrders` filters that same cached list
 /// down to the signed-in customer's own orders (FR6, FR12).
+///
+/// Security rules only let a customer read their own `orders` docs, so
+/// the underlying query must be scoped server-side with a `.where()`
+/// for non-staff users — an unfiltered `.orderBy()` alone would be
+/// rejected by Firestore for anyone who isn't staff. [updateAuth] is
+/// called from a ChangeNotifierProxyProvider in main.dart whenever
+/// AuthProvider's uid/role changes, and restarts the stream with the
+/// right query.
 class OrderProvider extends ChangeNotifier {
-  OrderProvider() {
-    _sub = _db
-        .collection('orders')
-        .orderBy('orderDateMs', descending: true)
-        .snapshots()
-        .listen(_onSnapshot, onError: (_) {});
-  }
-
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  late final StreamSubscription<QuerySnapshot<Map<String, dynamic>>> _sub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _sub;
 
   List<Order> _orders = [];
   bool _isLoading = true;
+  String? _uid;
+  bool _isStaff = false;
 
   bool get isLoading => _isLoading;
 
@@ -32,6 +34,41 @@ class OrderProvider extends ChangeNotifier {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const [];
     return _orders.where((o) => o.customerId == uid).toList();
+  }
+
+  /// Restarts the Firestore listener with a query matching the current
+  /// user's role. Call this whenever auth state (uid or isStaff)
+  /// changes; a no-op if nothing actually changed.
+  void updateAuth({required String? uid, required bool isStaff}) {
+    if (_uid == uid && _isStaff == isStaff) return;
+    _uid = uid;
+    _isStaff = isStaff;
+    _listen();
+  }
+
+  void _listen() {
+    _sub?.cancel();
+    if (_uid == null) {
+      _orders = [];
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    _isLoading = true;
+    notifyListeners();
+
+    final Query<Map<String, dynamic>> query = _isStaff
+        ? _db.collection('orders').orderBy('orderDateMs', descending: true)
+        : _db
+            .collection('orders')
+            .where('customerId', isEqualTo: _uid)
+            .orderBy('orderDateMs', descending: true);
+
+    _sub = query.snapshots().listen(_onSnapshot, onError: (_) {
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 
   List<Order> ordersByStatus(OrderStatus? status) {
@@ -118,7 +155,7 @@ class OrderProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _sub.cancel();
+    _sub?.cancel();
     super.dispose();
   }
 }

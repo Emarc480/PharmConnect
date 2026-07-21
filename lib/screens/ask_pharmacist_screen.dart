@@ -57,7 +57,8 @@ class _AskPharmacistScreenState extends State<AskPharmacistScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final messages = context.watch<PharmacistChatProvider>().myMessages;
+    final chat = context.watch<PharmacistChatProvider>();
+    final messages = chat.myMessages;
     _scrollToBottom();
 
     return Scaffold(
@@ -94,7 +95,27 @@ class _AskPharmacistScreenState extends State<AskPharmacistScreen> {
         child: Column(
           children: [
             Expanded(
-              child: messages.isEmpty
+              child: chat.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : chat.error != null
+                      ? Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.error_outline, color: Colors.grey.shade400, size: 32),
+                                const SizedBox(height: 10),
+                                Text(
+                                  "Couldn't load your conversation. Check your connection and reopen this chat.",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.grey.shade500),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : messages.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.all(24),
                       child: Center(
