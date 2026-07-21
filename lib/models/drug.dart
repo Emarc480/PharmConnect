@@ -27,6 +27,7 @@ class Drug {
   final int reorderLevel;
   final int discountPercent;
   final String? imageBase64;
+  final String? countryOfOrigin; // ISO 3166-1 alpha-2 code, e.g. 'UG'
 
   const Drug({
     required this.id,
@@ -38,6 +39,7 @@ class Drug {
     this.reorderLevel = 10,
     this.discountPercent = 0,
     this.imageBase64,
+    this.countryOfOrigin,
   });
 
   /// Stock status is always derived from live stockQuantity — never
@@ -94,6 +96,7 @@ class Drug {
     int? reorderLevel,
     int? discountPercent,
     String? imageBase64,
+    String? countryOfOrigin,
   }) {
     return Drug(
       id: id,
@@ -105,6 +108,7 @@ class Drug {
       reorderLevel: reorderLevel ?? this.reorderLevel,
       discountPercent: discountPercent ?? this.discountPercent,
       imageBase64: imageBase64 ?? this.imageBase64,
+      countryOfOrigin: countryOfOrigin ?? this.countryOfOrigin,
     );
   }
 
@@ -119,6 +123,7 @@ class Drug {
       reorderLevel: ((map['reorderLevel'] as num?) ?? 10).toInt(),
       discountPercent: ((map['discountPercent'] as num?) ?? 0).toInt(),
       imageBase64: map['imageBase64'] as String?,
+      countryOfOrigin: map['countryOfOrigin'] as String?,
     );
   }
 
@@ -132,6 +137,7 @@ class Drug {
       'reorderLevel': reorderLevel,
       'discountPercent': discountPercent,
       'imageBase64': imageBase64,
+      'countryOfOrigin': countryOfOrigin,
     };
   }
 }
