@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../models/drug.dart';
 import '../providers/drug_provider.dart';
 import '../core/constants/drug_categories.dart';
+import '../core/constants/countries.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -30,8 +31,31 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Widget build(BuildContext context) {
     final drugProvider = context.watch<DrugProvider>();
     final drugs = drugProvider.allDrugs.where((drug) {
-      return drug.name.toLowerCase().contains(_query.toLowerCase());
+      final matchesQuery = drug.name.toLowerCase().contains(_query.toLowerCase());
+      final matchesCategory = drugProvider.selectedCategory == 'All' ||
+          drug.category == drugProvider.selectedCategory;
+      return matchesQuery && matchesCategory;
     }).toList();
+
+    // Group into per-category sections, in the same fixed order as
+    // kDrugCategories (so "Painkillers"-style sections always appear
+    // in a stable order), skipping any category with no matches.
+    final grouped = <String, List<Drug>>{};
+    for (final category in kDrugCategories) {
+      final inCategory = drugs.where((d) => d.category == category).toList();
+      if (inCategory.isNotEmpty) grouped[category] = inCategory;
+    }
+    // Anything with a category outside the known list (shouldn't
+    // normally happen) still shows up, grouped by its own category
+    // name at the end.
+    final knownCategories = kDrugCategories.toSet();
+    final leftoverCategories = drugs
+        .map((d) => d.category)
+        .where((c) => !knownCategories.contains(c))
+        .toSet();
+    for (final category in leftoverCategories) {
+      grouped[category] = drugs.where((d) => d.category == category).toList();
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -41,11 +65,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: [
-          if (drugProvider.allDrugs.isEmpty && !drugProvider.isLoading)
-            TextButton(
-              onPressed: () => drugProvider.seedSampleCatalog(),
-              child: const Text('Seed sample data'),
-            ),
           IconButton(
             tooltip: 'Add drug',
             onPressed: () => _showAddDrugSheet(context),
@@ -99,16 +118,43 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                   const SizedBox(height: 8),
                   Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-                      children: [
-                        for (final drug in drugs)
-                          _InventoryRow(
-                            drug: drug,
-                            onEdit: () => _showEditDrugSheet(context, drug),
+                    child: grouped.isEmpty
+                        ? const Center(child: Text('No drugs found'))
+                        : ListView(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                            children: [
+                              for (final entry in grouped.entries) ...[
+                                _CategorySectionHeader(
+                                  category: entry.key,
+                                  count: entry.value.length,
+                                ),
+                                const SizedBox(height: 10),
+                                GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: entry.value.length,
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    mainAxisSpacing: 14,
+                                    crossAxisSpacing: 14,
+                                    childAspectRatio: 0.62,
+                                  ),
+                                  itemBuilder: (context, i) {
+                                    final drug = entry.value[i];
+                                    return _InventoryGridCard(
+                                      drug: drug,
+                                      onTap: () => _showEditDrugSheet(context, drug),
+                                      onDecrement: drug.stockQuantity > 0
+                                          ? () => drugProvider.adjustStock(drug.id, -1)
+                                          : null,
+                                      onIncrement: () => drugProvider.adjustStock(drug.id, 1),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 22),
+                              ],
+                            ],
                           ),
-                      ],
-                    ),
                   ),
                 ],
               ),
@@ -137,60 +183,251 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 }
 
-class _InventoryRow extends StatelessWidget {
-  const _InventoryRow({
+/// Section title shown above each category's group of cards — e.g.
+/// "Pain & Fever" above Paracetamol/Tramadol, matching the pharmacy's
+/// own category breakdown (drug_details.pdf) rather than a flat list.
+class _CategorySectionHeader extends StatelessWidget {
+  const _CategorySectionHeader({required this.category, required this.count});
+
+  final String category;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = categoryColor(category);
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(categoryIcon(category), size: 16, color: color),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            category,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+        ),
+        Text(
+          '$count',
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+}
+
+/// Two-column inventory card matching the customer-facing
+/// [ProductGridCard]'s visual language (rounded photo tile, stock
+/// pill, white card with soft shadow) but built for staff: a
+/// low-stock/out-of-stock badge instead of a discount badge, an edit
+/// pencil instead of a wishlist heart, a country-of-origin flag row,
+/// and an inline +/- stepper for adjusting stock without opening the
+/// full edit form.
+class _InventoryGridCard extends StatelessWidget {
+  const _InventoryGridCard({
     required this.drug,
-    required this.onEdit,
+    required this.onTap,
+    required this.onDecrement,
+    required this.onIncrement,
   });
 
   final Drug drug;
-  final VoidCallback onEdit;
+  final VoidCallback onTap;
+  final VoidCallback? onDecrement;
+  final VoidCallback onIncrement;
+
+  Color get _stockColor {
+    if (drug.stockQuantity <= 0) return Colors.grey;
+    return drug.isLowStock ? Colors.orange.shade700 : Colors.green.shade600;
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isOutOfStock = drug.stockQuantity <= 0;
+    final countryName = countryNameForCode(drug.countryOfOrigin);
 
     return InkWell(
-      onTap: onEdit,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: drug.hasImage
-                  ? Image.memory(base64Decode(drug.imageBase64!), width: 44, height: 44, fit: BoxFit.cover)
-                  : Container(
-                      width: 44,
-                      height: 44,
-                      color: categoryColor(drug.category).withValues(alpha: 0.1),
-                      child: Icon(categoryIcon(drug.category), color: categoryColor(drug.category)),
-                    ),
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AspectRatio(
+              aspectRatio: 1.35,
+              child: Stack(
                 children: [
-                  Text(
-                    drug.name,
-                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: drug.hasImage
+                        ? Image.memory(
+                            base64Decode(drug.imageBase64!),
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            color: categoryColor(drug.category).withValues(alpha: 0.1),
+                            child: Center(
+                              child: Icon(categoryIcon(drug.category), size: 40, color: categoryColor(drug.category)),
+                            ),
+                          ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${drug.stockQuantity} units',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: drug.isLowStock ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant,
+                  if (isOutOfStock || drug.isLowStock)
+                    Positioned(
+                      left: 0,
+                      top: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isOutOfStock ? Colors.grey.shade600 : Colors.orange.shade700,
+                          borderRadius: const BorderRadius.horizontal(right: Radius.circular(6)),
+                        ),
+                        child: Text(
+                          isOutOfStock ? 'Out of Stock' : 'Low Stock',
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: InkWell(
+                      onTap: onTap,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: const Icon(Icons.edit_outlined, size: 16, color: Colors.black87),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.grey.shade400),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    drug.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, height: 1.25),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(categoryIcon(drug.category), size: 12, color: categoryColor(drug.category)),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          drug.category,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 10.5, color: Colors.grey.shade600),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (countryName != null) ...[
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Text(countryFlagEmoji(drug.countryOfOrigin), style: const TextStyle(fontSize: 12)),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            countryName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 10.5, color: Colors.grey.shade600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Text(
+                    drug.formattedPrice,
+                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 34,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        _StepperButton(icon: Icons.remove, onTap: onDecrement),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${drug.stockQuantity}',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _stockColor),
+                              ),
+                              Text(
+                                'units',
+                                style: TextStyle(fontSize: 8, color: Colors.grey.shade500),
+                              ),
+                            ],
+                          ),
+                        ),
+                        _StepperButton(icon: Icons.add, onTap: onIncrement),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Small square tap target used inside the stock stepper. Disabled
+/// (greyed, no tap) when [onTap] is null — e.g. can't decrement below
+/// zero units.
+class _StepperButton extends StatelessWidget {
+  const _StepperButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        width: 30,
+        height: 34,
+        child: Icon(icon, size: 16, color: enabled ? Colors.black87 : Colors.grey.shade300),
       ),
     );
   }
@@ -223,6 +460,11 @@ class _DrugFormState extends State<_DrugForm> {
   late final _discountController =
       TextEditingController(text: widget.existingDrug?.discountPercent.toString() ?? '0');
   late String _category = widget.existingDrug?.category ?? kDrugCategories.first;
+
+  /// ISO country code (e.g. 'UG') for the "Country of origin"
+  /// dropdown. Null/unselected is allowed — country of manufacture
+  /// isn't always known when a drug is first added.
+  late String? _countryCode = widget.existingDrug?.countryOfOrigin;
 
   /// A freshly picked photo (camera/gallery), overriding whatever
   /// photo the drug already had.
@@ -417,6 +659,30 @@ class _DrugFormState extends State<_DrugForm> {
                 keyboardType: TextInputType.number,
                 validator: _requiredNumber,
               ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String?>(
+                initialValue: _countryCode,
+                decoration: const InputDecoration(labelText: 'Country of origin', border: OutlineInputBorder()),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Not specified'),
+                  ),
+                  for (final country in kManufacturerCountries)
+                    DropdownMenuItem<String?>(
+                      value: country.code,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(countryFlagEmoji(country.code), style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 8),
+                          Text(country.name),
+                        ],
+                      ),
+                    ),
+                ],
+                onChanged: (value) => setState(() => _countryCode = value),
+              ),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: _isSaving || _isDeleting ? null : _save,
@@ -484,6 +750,7 @@ class _DrugFormState extends State<_DrugForm> {
           price: double.parse(_priceController.text),
           discountPercent: int.parse(_discountController.text).clamp(0, 99),
           imageBase64: imageBase64,
+          countryOfOrigin: _countryCode,
         );
       } else {
         await drugProvider.updateDrug(
@@ -497,6 +764,7 @@ class _DrugFormState extends State<_DrugForm> {
             reorderLevel: int.parse(_reorderLevelController.text),
             discountPercent: int.parse(_discountController.text).clamp(0, 99),
             imageBase64: imageBase64,
+            countryOfOrigin: _countryCode,
           ),
         );
       }

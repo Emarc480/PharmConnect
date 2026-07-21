@@ -7,6 +7,7 @@ import '../providers/cart_provider.dart';
 import '../providers/refill_provider.dart';
 import '../core/theme/app_theme.dart';
 import '../core/constants/app_routes.dart';
+import '../core/constants/countries.dart';
 
 class DrugDetailScreen extends StatefulWidget {
   final Drug drug;
@@ -70,9 +71,22 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
               ],
             ),
             const SizedBox(height: 4),
-            Text(
-              drug.category,
-              style: TextStyle(color: Colors.grey.shade600),
+            Row(
+              children: [
+                Text(
+                  drug.category,
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+                if (countryNameForCode(drug.countryOfOrigin) != null) ...[
+                  Text('  •  ', style: TextStyle(color: Colors.grey.shade400)),
+                  Text(countryFlagEmoji(drug.countryOfOrigin), style: const TextStyle(fontSize: 14)),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Made in ${countryNameForCode(drug.countryOfOrigin)}',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ],
+              ],
             ),
             const SizedBox(height: 4),
             Text(
