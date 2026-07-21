@@ -148,6 +148,18 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  //flag for account deletion
+  Future<void> requestAccountDeletion() async {
+    final user = _currentUser;
+    if (user == null) return;
+    await _db.collection('users').doc(user.uid).update({
+      'deletionRequested': true,
+      'deletionRequestedAt': FieldValue.serverTimestamp(),
+    });
+    _currentUser = user.copyWith(deletionRequested: true);
+    notifyListeners();
+  }
+
   Future<void> signOut() async {
     await _auth.signOut();
     // _onAuthChanged listener sets status to unauthenticated.
