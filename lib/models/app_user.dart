@@ -28,12 +28,14 @@ class AppUser {
   final String name;
   final String email;
   final UserRole role;
+  final bool deletionRequested;
 
   const AppUser({
     required this.uid,
     required this.name,
     required this.email,
     required this.role,
+    this.deletionRequested = false,
   });
 
   factory AppUser.fromMap(String uid, Map<String, dynamic> map) {
@@ -42,6 +44,7 @@ class AppUser {
       name: (map['name'] as String?) ?? '',
       email: (map['email'] as String?) ?? '',
       role: UserRoleLabel.fromName((map['role'] as String?) ?? 'customer'),
+      deletionRequested: (map['deletionRequested'] as bool?) ?? false
     );
   }
 
@@ -50,6 +53,15 @@ class AppUser {
       'name': name,
       'email': email,
       'role': role.name,
+      'deletionRequested': deletionRequested,
     };
   }
+
+  AppUser copyWith({bool? deletionRequested}) => AppUser(
+    uid: uid,
+    name: name,
+    email: email,
+    role: role,
+    deletionRequested: deletionRequested ?? this.deletionRequested
+  );
 }
