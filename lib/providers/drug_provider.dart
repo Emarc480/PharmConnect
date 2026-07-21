@@ -143,6 +143,7 @@ class DrugProvider extends ChangeNotifier {
       reorderLevel: reorderLevel,
       discountPercent: discountPercent,
       imageBase64: imageBase64,
+      countryOfOrigin: countryOfOrigin,
     );
     await _db.collection('drugs').add(drug.toMap());
   }
