@@ -25,7 +25,7 @@ class ProfileScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, AppTheme.navBarClearance),
           children: [
             _ProfileHeader(user: user, isStaff: isStaff),
             const SizedBox(height: 20),
@@ -92,6 +92,11 @@ class ProfileScreen extends StatelessWidget {
                         icon: Icons.support_agent_outlined,
                         label: 'Ask a Pharmacist',
                         onTap: () => Navigator.pushNamed(context, AppRoutes.askPharmacist),
+                      ),
+                      _MenuTile(
+                        icon: Icons.settings_outlined,
+                        label: 'App Settings',
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.appSettings),
                         isLast: true,
                       ),
                     ],

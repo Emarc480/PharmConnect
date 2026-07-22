@@ -20,4 +20,25 @@ class AppTheme {
       border: UnderlineInputBorder(),
     ),
   );
+
+  static ThemeData get darkTheme => ThemeData(
+    brightness: Brightness.dark,
+    primaryColor: primaryNavy,
+    scaffoldBackgroundColor: const Color(0xFF121212),
+    colorScheme: ColorScheme.fromSeed(seedColor: primaryNavy, brightness: Brightness.dark),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFF1E1E1E),
+      foregroundColor: Colors.white,
+      elevation: 0,
+    ),
+    inputDecorationTheme: const InputDecorationTheme(border: UnderlineInputBorder()),
+  );
+
+  static Color navBarSurface(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF1E1E1E)
+        : Colors.white;
+  }
+
+  static const double navBarClearance = 50;
 }

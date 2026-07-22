@@ -20,14 +20,30 @@ class FloatingNavBar extends StatelessWidget {
 
   static const _items = [
     _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Home'),
-    _NavItem(icon: Icons.storefront_outlined, activeIcon: Icons.storefront, label: 'Store'),
-    _NavItem(icon: Icons.shopping_cart_outlined, activeIcon: Icons.shopping_cart, label: 'Cart'),
-    _NavItem(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Account'),
+    _NavItem(
+      icon: Icons.storefront_outlined,
+      activeIcon: Icons.storefront,
+      label: 'Store',
+    ),
+    _NavItem(
+      icon: Icons.shopping_cart_outlined,
+      activeIcon: Icons.shopping_cart,
+      label: 'Cart',
+    ),
+    _NavItem(
+      icon: Icons.person_outline,
+      activeIcon: Icons.person,
+      label: 'Account',
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     final cartCount = context.watch<CartProvider>().itemCount;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final activeColor = theme.colorScheme.primary;
+    final inactiveColor = theme.colorScheme.onSurfaceVariant;
 
     return SafeArea(
       child: Padding(
@@ -35,11 +51,14 @@ class FloatingNavBar extends StatelessWidget {
         child: Container(
           height: 68,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.navBarSurface(context),
             borderRadius: BorderRadius.circular(34),
+            border: isDark
+                ? Border.all(color: Colors.white.withValues(alpha: 0.08))
+                : null,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
+                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -64,7 +83,7 @@ class FloatingNavBar extends StatelessWidget {
                         children: [
                           Icon(
                             isActive ? item.activeIcon : item.icon,
-                            color: isActive ? AppTheme.primaryNavy : Colors.grey.shade500,
+                            color: isActive ? activeColor : inactiveColor,
                             size: 24,
                           ),
                           if (showBadge)
@@ -72,7 +91,10 @@ class FloatingNavBar extends StatelessWidget {
                               right: -8,
                               top: -4,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.red,
                                   borderRadius: BorderRadius.circular(10),
@@ -81,7 +103,11 @@ class FloatingNavBar extends StatelessWidget {
                                 child: Text(
                                   '$cartCount',
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -92,8 +118,10 @@ class FloatingNavBar extends StatelessWidget {
                         item.label,
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                          color: isActive ? AppTheme.primaryNavy : Colors.grey.shade500,
+                          fontWeight: isActive
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isActive ? activeColor : inactiveColor,
                         ),
                       ),
                     ],
@@ -113,5 +141,9 @@ class _NavItem {
   final IconData activeIcon;
   final String label;
 
-  const _NavItem({required this.icon, required this.activeIcon, required this.label});
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+  });
 }

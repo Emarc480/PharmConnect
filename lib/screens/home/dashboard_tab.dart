@@ -39,7 +39,7 @@ class _DashboardTabState extends State<DashboardTab> {
       builder: (sheetContext) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, AppTheme.navBarClearance),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,7 +131,7 @@ class _DashboardTabState extends State<DashboardTab> {
     return SafeArea(
       bottom: false,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, AppTheme.navBarClearance),
         children: [
           Text(
             'Hi, $firstName 👋',

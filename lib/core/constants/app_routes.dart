@@ -20,6 +20,7 @@ import '../../screens/ask_pharmacist_screen.dart';
 import '../../screens/staff_messages_screen.dart';
 import '../../screens/prescription_management_screen.dart';
 import '../../widgets/role_guard.dart';
+import '../../screens/app_settings_screen.dart';
 
 class AppRoutes {
   /// Root route: decides between Login / Home / Staff Dashboard based on
@@ -42,6 +43,7 @@ class AppRoutes {
   static const String askPharmacist = '/ask-pharmacist';
   static const String staffMessages = '/staff-messages';
   static const String prescriptionManagement = '/prescription-management';
+  static const String appSettings = '/app-settings';
 
   static Map<String, WidgetBuilder> routes = {
     splash: (context) => const AuthGate(),
@@ -60,6 +62,7 @@ class AppRoutes {
     askPharmacist: (context) => const AskPharmacistScreen(),
     staffMessages: (context) => const StaffOnly(child: StaffMessagesScreen()),
     prescriptionManagement: (context) => const StaffOnly(child: PrescriptionManagementScreen()),
+    appSettings: (context) => const AppSettingsScreen(),
   };
 
   /// Handles routes that need arguments (drug object, order id).

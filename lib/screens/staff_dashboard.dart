@@ -46,7 +46,7 @@ class StaffDashboard extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, AppTheme.navBarClearance),
         children: [
           Text(
             'Hi, ${firstName.isEmpty ? 'there' : firstName} 👋',
