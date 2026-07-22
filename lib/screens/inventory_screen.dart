@@ -138,7 +138,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                     crossAxisCount: 2,
                                     mainAxisSpacing: 14,
                                     crossAxisSpacing: 14,
-                                    childAspectRatio: 0.5,
+                                    childAspectRatio: 0.46,
                                   ),
                                   itemBuilder: (context, i) {
                                     final drug = entry.value[i];
@@ -350,17 +350,17 @@ class _InventoryGridCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (drug.manufacturer != null && drug.manufacturer!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 3),
+                  if (drug.hasManufacturer) ...[
+                    const SizedBox(height: 2),
                     Text(
                       'Manufactured by:',
-                      style: TextStyle(fontSize: 9.5, color: Colors.grey.shade500),
+                      style: TextStyle(fontSize: 10.5, color: Colors.grey.shade600),
                     ),
                     Text(
-                      drug.manufacturer!,
+                      drug.manufacturerName!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600),
+                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.black87),
                     ),
                   ],
                   if (countryName != null) ...[
@@ -465,6 +465,8 @@ class _DrugForm extends StatefulWidget {
 class _DrugFormState extends State<_DrugForm> {
   final _formKey = GlobalKey<FormState>();
   late final _nameController = TextEditingController(text: widget.existingDrug?.name ?? '');
+  late final _manufacturerController =
+      TextEditingController(text: widget.existingDrug?.manufacturerName ?? '');
   late final _stockController =
       TextEditingController(text: widget.existingDrug?.stockQuantity.toString() ?? '');
   late final _reorderLevelController =
@@ -473,8 +475,6 @@ class _DrugFormState extends State<_DrugForm> {
       TextEditingController(text: widget.existingDrug?.price.toStringAsFixed(0) ?? '');
   late final _discountController =
       TextEditingController(text: widget.existingDrug?.discountPercent.toString() ?? '0');
-  late final _manufacturerController =
-      TextEditingController(text: widget.existingDrug?.manufacturer ?? '');
   late String _category = widget.existingDrug?.category ?? kDrugCategories.first;
 
   /// ISO country code (e.g. 'UG') for the "Country of origin"
@@ -496,11 +496,11 @@ class _DrugFormState extends State<_DrugForm> {
   @override
   void dispose() {
     _nameController.dispose();
+    _manufacturerController.dispose();
     _stockController.dispose();
     _reorderLevelController.dispose();
     _priceController.dispose();
     _discountController.dispose();
-    _manufacturerController.dispose();
     super.dispose();
   }
 
@@ -624,6 +624,15 @@ class _DrugFormState extends State<_DrugForm> {
                 validator: _requiredText,
               ),
               const SizedBox(height: 12),
+              TextFormField(
+                controller: _manufacturerController,
+                decoration: const InputDecoration(
+                  labelText: 'Manufacturer (optional)',
+                  hintText: 'e.g. Bayer AG',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _category,
                 decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
@@ -675,15 +684,6 @@ class _DrugFormState extends State<_DrugForm> {
                 ),
                 keyboardType: TextInputType.number,
                 validator: _requiredNumber,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _manufacturerController,
-                decoration: const InputDecoration(
-                  labelText: 'Manufactured by',
-                  hintText: 'e.g. Cipla',
-                  border: OutlineInputBorder(),
-                ),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
@@ -767,6 +767,8 @@ class _DrugFormState extends State<_DrugForm> {
       }
 
       final existing = widget.existingDrug;
+      final manufacturerText = _manufacturerController.text.trim();
+      final manufacturerName = manufacturerText.isEmpty ? null : manufacturerText;
       if (existing == null) {
         await drugProvider.addDrug(
           name: _nameController.text.trim(),
@@ -777,9 +779,7 @@ class _DrugFormState extends State<_DrugForm> {
           discountPercent: int.parse(_discountController.text).clamp(0, 99),
           imageBase64: imageBase64,
           countryOfOrigin: _countryCode,
-          manufacturer: _manufacturerController.text.trim().isEmpty
-              ? null
-              : _manufacturerController.text.trim(),
+          manufacturerName: manufacturerName,
         );
       } else {
         await drugProvider.updateDrug(
@@ -794,9 +794,7 @@ class _DrugFormState extends State<_DrugForm> {
             discountPercent: int.parse(_discountController.text).clamp(0, 99),
             imageBase64: imageBase64,
             countryOfOrigin: _countryCode,
-            manufacturer: _manufacturerController.text.trim().isEmpty
-                ? null
-                : _manufacturerController.text.trim(),
+            manufacturerName: manufacturerName,
           ),
         );
       }
