@@ -45,3 +45,4 @@ app.*.map.json
 /android/app/release
 android/build/
 desktop.ini 
+devtools_options.yaml 
