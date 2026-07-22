@@ -25,7 +25,12 @@ class ProfileScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, AppTheme.navBarClearance),
+          padding: const EdgeInsets.fromLTRB(
+            20,
+            8,
+            20,
+            AppTheme.navBarClearance,
+          ),
           children: [
             _ProfileHeader(user: user, isStaff: isStaff),
             const SizedBox(height: 20),
@@ -43,27 +48,44 @@ class ProfileScreen extends StatelessWidget {
                       _MenuTile(
                         icon: Icons.inventory_2_outlined,
                         label: 'Inventory',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.inventory),
+                        onTap: () =>
+                            Navigator.pushNamed(context, AppRoutes.inventory),
                       ),
                       _MenuTile(
                         icon: Icons.receipt_long_outlined,
                         label: 'Manage Orders',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.orders),
+                        onTap: () =>
+                            Navigator.pushNamed(context, AppRoutes.orders),
                       ),
                       _MenuTile(
                         icon: Icons.refresh,
                         label: 'Refill Requests',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.refillManagement),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.refillManagement,
+                        ),
                       ),
                       _MenuTile(
                         icon: Icons.description_outlined,
                         label: 'Prescriptions',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.prescriptionManagement),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.prescriptionManagement,
+                        ),
                       ),
                       _MenuTile(
                         icon: Icons.chat_bubble_outline,
                         label: 'Customer Messages',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.staffMessages),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.staffMessages,
+                        ),
+                      ),
+                      _MenuTile(
+                        icon: Icons.settings_outlined,
+                        label: 'App Settings',
+                        onTap: () =>
+                            Navigator.pushNamed(context, AppRoutes.appSettings),
                         isLast: true,
                       ),
                     ]
@@ -71,32 +93,42 @@ class ProfileScreen extends StatelessWidget {
                       _MenuTile(
                         icon: Icons.receipt_long_outlined,
                         label: 'My Orders',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.myOrders),
+                        onTap: () =>
+                            Navigator.pushNamed(context, AppRoutes.myOrders),
                       ),
                       _MenuTile(
                         icon: Icons.refresh,
                         label: 'Refill Request',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.refill),
+                        onTap: () =>
+                            Navigator.pushNamed(context, AppRoutes.refill),
                       ),
                       _MenuTile(
                         icon: Icons.description_outlined,
                         label: 'Prescriptions',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.prescription),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.prescription,
+                        ),
                       ),
                       _MenuTile(
                         icon: Icons.notifications_outlined,
                         label: 'Reminders',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.reminders),
+                        onTap: () =>
+                            Navigator.pushNamed(context, AppRoutes.reminders),
                       ),
                       _MenuTile(
                         icon: Icons.support_agent_outlined,
                         label: 'Ask a Pharmacist',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.askPharmacist),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.askPharmacist,
+                        ),
                       ),
                       _MenuTile(
                         icon: Icons.settings_outlined,
                         label: 'App Settings',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.appSettings),
+                        onTap: () =>
+                            Navigator.pushNamed(context, AppRoutes.appSettings),
                         isLast: true,
                       ),
                     ],
@@ -116,7 +148,9 @@ class ProfileScreen extends StatelessWidget {
                 minimumSize: const Size.fromHeight(48),
                 foregroundColor: Colors.red,
                 side: const BorderSide(color: Colors.red),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               icon: const Icon(Icons.logout, size: 18),
               label: const Text('Log Out'),
@@ -124,7 +158,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Center(
               child: Text(
-                'PharmConnect · v1.1.5',
+                'PharmConnect · v1.1.7',
                 style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
               ),
             ),
@@ -149,9 +183,12 @@ class _ProfileHeader extends StatelessWidget {
     if (name.isEmpty) return '?';
     final parts = name.split(RegExp(r'\s+'));
     if (parts.length == 1) {
-      return parts.first.substring(0, parts.first.length >= 2 ? 2 : 1).toUpperCase();
+      return parts.first
+          .substring(0, parts.first.length >= 2 ? 2 : 1)
+          .toUpperCase();
     }
-    return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
   }
 
   @override
@@ -164,11 +201,18 @@ class _ProfileHeader extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: isStaff
               ? [AppTheme.primaryNavy, const Color(0xFF2E5A8C)]
-              : [AppTheme.primaryNavy.withValues(alpha: 0.9), AppTheme.inStockGreen.withValues(alpha: 0.85)],
+              : [
+                  AppTheme.primaryNavy.withValues(alpha: 0.9),
+                  AppTheme.inStockGreen.withValues(alpha: 0.85),
+                ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: AppTheme.primaryNavy.withValues(alpha: 0.18), blurRadius: 18, offset: const Offset(0, 8)),
+          BoxShadow(
+            color: AppTheme.primaryNavy.withValues(alpha: 0.18),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: Column(
@@ -178,18 +222,29 @@ class _ProfileHeader extends StatelessWidget {
             backgroundColor: Colors.white.withValues(alpha: 0.18),
             child: Text(
               _initials,
-              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           const SizedBox(height: 14),
           Text(
             user?.name ?? '—',
-            style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w700),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             user?.email ?? '—',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 12),
           Container(
@@ -202,11 +257,19 @@ class _ProfileHeader extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(isStaff ? Icons.storefront_outlined : Icons.person_outline, size: 14, color: Colors.white),
+                Icon(
+                  isStaff ? Icons.storefront_outlined : Icons.person_outline,
+                  size: 14,
+                  color: Colors.white,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   user?.role.label ?? '—',
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -225,9 +288,16 @@ class _StaffOverviewStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lowStockCount = context.watch<DrugProvider>().allDrugs.where((d) => d.isLowStock).length;
-    final pendingOrders =
-        context.watch<OrderProvider>().orders.where((o) => o.status != OrderStatus.delivered).length;
+    final lowStockCount = context
+        .watch<DrugProvider>()
+        .allDrugs
+        .where((d) => d.isLowStock)
+        .length;
+    final pendingOrders = context
+        .watch<OrderProvider>()
+        .orders
+        .where((o) => o.status != OrderStatus.delivered)
+        .length;
     final pendingRefills = context.watch<RefillProvider>().pendingCount;
 
     return Row(
@@ -258,7 +328,8 @@ class _StaffOverviewStats extends StatelessWidget {
             label: 'Refills',
             icon: Icons.refresh,
             color: AppTheme.inStockGreen,
-            onTap: () => Navigator.pushNamed(context, AppRoutes.refillManagement),
+            onTap: () =>
+                Navigator.pushNamed(context, AppRoutes.refillManagement),
           ),
         ),
       ],
@@ -297,12 +368,23 @@ class _StatCard extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(height: 8),
-            Text('$value', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: color)),
+            Text(
+              '$value',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
             const SizedBox(height: 2),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -355,7 +437,12 @@ class _MenuTile extends StatelessWidget {
   final VoidCallback onTap;
   final bool isLast;
 
-  const _MenuTile({required this.icon, required this.label, required this.onTap, this.isLast = false});
+  const _MenuTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isLast = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +450,10 @@ class _MenuTile extends StatelessWidget {
       children: [
         ListTile(
           leading: Icon(icon, color: AppTheme.primaryNavy),
-          title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          title: Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
           trailing: const Icon(Icons.chevron_right, color: Colors.grey),
           onTap: onTap,
         ),
