@@ -78,7 +78,7 @@ class StoreTab extends StatelessWidget {
                       crossAxisCount: 2,
                       mainAxisSpacing: 14,
                       crossAxisSpacing: 14,
-                      childAspectRatio: 0.62,
+                      childAspectRatio: 0.5,
                     ),
                     itemBuilder: (context, i) {
                       final drug = drugProvider.filteredDrugs[i];
