@@ -253,7 +253,7 @@ class _DashboardTabState extends State<DashboardTab> {
                 crossAxisCount: 2,
                 mainAxisSpacing: 14,
                 crossAxisSpacing: 14,
-                childAspectRatio: 0.5,
+                childAspectRatio: 0.46,
               ),
               itemBuilder: (context, i) {
                 final drug = recommended[i];
