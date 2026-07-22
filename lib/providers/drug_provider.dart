@@ -132,7 +132,7 @@ class DrugProvider extends ChangeNotifier {
     int discountPercent = 0,
     String? imageBase64,
     String? countryOfOrigin,
-    String? manufacturer,
+    String? manufacturerName,
   }) async {
     final drug = Drug(
       id: '',
@@ -145,7 +145,7 @@ class DrugProvider extends ChangeNotifier {
       discountPercent: discountPercent,
       imageBase64: imageBase64,
       countryOfOrigin: countryOfOrigin,
-      manufacturer: manufacturer,
+      manufacturerName: manufacturerName,
     );
     await _db.collection('drugs').add(drug.toMap());
   }
