@@ -49,7 +49,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
               child: orders.isEmpty
                   ? const Center(child: Text('No orders here'))
                   : ListView.separated(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, AppTheme.navBarClearance),
                       itemCount: orders.length,
                       separatorBuilder: (_, _) => const Divider(),
                       itemBuilder: (context, i) {

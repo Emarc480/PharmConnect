@@ -33,11 +33,19 @@ class CartScreen extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(item.drugName,
-                                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  Text(
+                                    item.drugName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                   const SizedBox(height: 2),
-                                  Text(item.formattedUnitPrice,
-                                      style: TextStyle(color: Colors.grey.shade600)),
+                                  Text(
+                                    item.formattedUnitPrice,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -50,7 +58,9 @@ class CartScreen extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               _formatUgx(item.subtotal.round()),
-                              style: const TextStyle(fontWeight: FontWeight.w700),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ],
                         );
@@ -58,9 +68,16 @@ class CartScreen extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(
+                      20,
+                      20,
+                      20,
+                      20 + AppTheme.navBarClearance,
+                    ),
                     decoration: BoxDecoration(
-                      border: Border(top: BorderSide(color: AppTheme.borderGrey)),
+                      border: Border(
+                        top: BorderSide(color: AppTheme.borderGrey),
+                      ),
                     ),
                     child: SafeArea(
                       top: false,
@@ -70,7 +87,10 @@ class CartScreen extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Total', style: TextStyle(fontSize: 16)),
+                              const Text(
+                                'Total',
+                                style: TextStyle(fontSize: 16),
+                              ),
                               Text(
                                 cart.formattedTotal,
                                 style: const TextStyle(
@@ -122,7 +142,9 @@ class CartScreen extends StatelessWidget {
       );
     } catch (_) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Could not place order. Please try again.')),
+        const SnackBar(
+          content: Text('Could not place order. Please try again.'),
+        ),
       );
     }
   }

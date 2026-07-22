@@ -33,10 +33,7 @@ class _StaffHomeShellState extends State<StaffHomeShell> {
     ];
 
     return Scaffold(
-      // Not extendBody — same reasoning as the customer shell: the
-      // Inventory "Save drug" sheet and Profile's log-out button sit
-      // flush at the bottom of their own layouts, so the body should
-      // stop above the pill nav rather than run underneath it.
+      extendBody: true,
       body: IndexedStack(index: _navIndex, children: tabs),
       bottomNavigationBar: StaffFloatingNavBar(
         currentIndex: _navIndex,

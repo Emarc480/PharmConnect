@@ -25,7 +25,7 @@ class ProfileScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, AppTheme.navBarClearance),
           children: [
             _ProfileHeader(user: user, isStaff: isStaff),
             const SizedBox(height: 20),

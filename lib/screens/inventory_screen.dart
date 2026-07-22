@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../models/drug.dart';
 import '../providers/drug_provider.dart';
 import '../core/constants/drug_categories.dart';
+import '../core/theme/app_theme.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -100,7 +101,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   const SizedBox(height: 8),
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, AppTheme.navBarClearance),
                       children: [
                         for (final drug in drugs)
                           _InventoryRow(
