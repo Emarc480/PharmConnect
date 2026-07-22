@@ -35,15 +35,19 @@ class StaffFloatingNavBar extends StatelessWidget {
 
     // Index 1 = Inventory, index 2 = Orders — matches _items above.
     final badgeCounts = {1: lowStockCount, 2: openOrdersCount};
-
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final inactiveColor = theme.colorScheme.onSurfaceVariant;
+    final activeColor = theme.colorScheme.primary;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         child: Container(
           height: 68,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.navBarSurface(context),
             borderRadius: BorderRadius.circular(34),
+            border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.08)) : null,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.12),
@@ -71,7 +75,7 @@ class StaffFloatingNavBar extends StatelessWidget {
                         children: [
                           Icon(
                             isActive ? item.activeIcon : item.icon,
-                            color: isActive ? AppTheme.primaryNavy : Colors.grey.shade500,
+                            color: isActive ? activeColor : inactiveColor,
                             size: 24,
                           ),
                           if (badgeCount > 0)
@@ -100,7 +104,7 @@ class StaffFloatingNavBar extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                          color: isActive ? AppTheme.primaryNavy : Colors.grey.shade500,
+                          color: isActive ? activeColor : inactiveColor,
                         ),
                       ),
                     ],
