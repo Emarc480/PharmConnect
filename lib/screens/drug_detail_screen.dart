@@ -88,6 +88,17 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
                 ],
               ],
             ),
+            if (drug.hasManufacturer) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Manufactured by:',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              ),
+              Text(
+                drug.manufacturerName!,
+                style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black87, fontSize: 14),
+              ),
+            ],
             const SizedBox(height: 4),
             Text(
               drug.stockLabel,
