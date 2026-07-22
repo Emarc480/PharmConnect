@@ -31,11 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      // Deliberately NOT extendBody: true — CartScreen's checkout
-      // button and ProfileScreen's log-out button sit flush at the
-      // bottom of their own layouts, and extending the body behind
-      // the nav bar would hide them under it. The pill still reads as
-      // "floating" from its own rounded corners, margin, and shadow.
+      extendBody: true,
       body: IndexedStack(index: _navIndex, children: tabs),
       bottomNavigationBar: FloatingNavBar(
         currentIndex: _navIndex,

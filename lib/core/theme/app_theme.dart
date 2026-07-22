@@ -40,5 +40,5 @@ class AppTheme {
         : Colors.white;
   }
 
-  static const double navBarClearance = 100;
+  static const double navBarClearance = 50;
 }
