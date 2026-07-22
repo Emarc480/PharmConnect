@@ -92,7 +92,6 @@ class ProfileScreen extends StatelessWidget {
                         icon: Icons.support_agent_outlined,
                         label: 'Ask a Pharmacist',
                         onTap: () => Navigator.pushNamed(context, AppRoutes.askPharmacist),
-                        isLast: true,
                       ),
                       _MenuTile(
                         icon: Icons.settings_outlined,
