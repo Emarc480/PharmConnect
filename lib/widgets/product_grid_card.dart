@@ -184,6 +184,7 @@ class ProductGridCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             drug.formattedOriginalPrice,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 11,
