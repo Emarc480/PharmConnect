@@ -137,7 +137,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                     crossAxisCount: 2,
                                     mainAxisSpacing: 14,
                                     crossAxisSpacing: 14,
-                                    childAspectRatio: 0.62,
+                                    childAspectRatio: 0.56,
                                   ),
                                   itemBuilder: (context, i) {
                                     final drug = entry.value[i];
@@ -366,12 +366,12 @@ class _InventoryGridCard extends StatelessWidget {
                       ],
                     ),
                   ],
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     drug.formattedPrice,
                     style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Container(
                     height: 34,
                     decoration: BoxDecoration(
