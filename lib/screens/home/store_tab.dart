@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/drug_provider.dart';
-import '../../widgets/drug_card.dart';
+import '../../providers/cart_provider.dart';
+import '../../providers/wishlist_provider.dart';
+import '../../widgets/product_grid_card.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/drug_categories.dart';
 import '../../core/theme/app_theme.dart';
@@ -15,6 +17,8 @@ class StoreTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final drugProvider = context.watch<DrugProvider>();
+    final wishlist = context.watch<WishlistProvider>();
+    final cart = context.read<CartProvider>();
 
     return SafeArea(
       bottom: false,
@@ -67,18 +71,32 @@ class StoreTab extends StatelessWidget {
           Expanded(
             child: drugProvider.filteredDrugs.isEmpty
                 ? const Center(child: Text('No drugs found'))
-                : ListView.builder(
+                : GridView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                     itemCount: drugProvider.filteredDrugs.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 14,
+                      crossAxisSpacing: 14,
+                      childAspectRatio: 0.62,
+                    ),
                     itemBuilder: (context, i) {
                       final drug = drugProvider.filteredDrugs[i];
-                      return DrugCard(
+                      return ProductGridCard(
                         drug: drug,
+                        isWishlisted: wishlist.isSaved(drug.id),
                         onTap: () => Navigator.pushNamed(
                           context,
                           AppRoutes.drugDetail,
                           arguments: drug,
                         ),
+                        onToggleWishlist: () => context.read<WishlistProvider>().toggle(drug.id),
+                        onAddToCart: () {
+                          cart.addToCart(drug);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('${drug.name} added to cart'), duration: const Duration(seconds: 1)),
+                          );
+                        },
                       );
                     },
                   ),
