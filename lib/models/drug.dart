@@ -28,6 +28,7 @@ class Drug {
   final int discountPercent;
   final String? imageBase64;
   final String? countryOfOrigin; // ISO 3166-1 alpha-2 code, e.g. 'UG'
+  final String? manufacturer; // e.g. 'Cipla'
 
   const Drug({
     required this.id,
@@ -40,6 +41,7 @@ class Drug {
     this.discountPercent = 0,
     this.imageBase64,
     this.countryOfOrigin,
+    this.manufacturer,
   });
 
   /// Stock status is always derived from live stockQuantity — never
@@ -97,6 +99,7 @@ class Drug {
     int? discountPercent,
     String? imageBase64,
     String? countryOfOrigin,
+    String? manufacturer,
   }) {
     return Drug(
       id: id,
@@ -109,6 +112,7 @@ class Drug {
       discountPercent: discountPercent ?? this.discountPercent,
       imageBase64: imageBase64 ?? this.imageBase64,
       countryOfOrigin: countryOfOrigin ?? this.countryOfOrigin,
+      manufacturer: manufacturer ?? this.manufacturer,
     );
   }
 
@@ -124,6 +128,7 @@ class Drug {
       discountPercent: ((map['discountPercent'] as num?) ?? 0).toInt(),
       imageBase64: map['imageBase64'] as String?,
       countryOfOrigin: map['countryOfOrigin'] as String?,
+      manufacturer: map['manufacturer'] as String?,
     );
   }
 
@@ -138,6 +143,7 @@ class Drug {
       'discountPercent': discountPercent,
       'imageBase64': imageBase64,
       'countryOfOrigin': countryOfOrigin,
+      'manufacturer': manufacturer,
     };
   }
 }
