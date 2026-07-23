@@ -253,7 +253,7 @@ class _DashboardTabState extends State<DashboardTab> {
                 crossAxisCount: 2,
                 mainAxisSpacing: 14,
                 crossAxisSpacing: 14,
-                childAspectRatio: 0.62,
+                childAspectRatio: 0.46,
               ),
               itemBuilder: (context, i) {
                 final drug = recommended[i];
@@ -336,7 +336,7 @@ class _DashboardTabState extends State<DashboardTab> {
             )
           else
             SizedBox(
-              height: 250,
+              height: 280,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: offers.length,

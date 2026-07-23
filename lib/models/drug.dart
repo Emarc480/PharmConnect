@@ -28,6 +28,7 @@ class Drug {
   final int discountPercent;
   final String? imageBase64;
   final String? countryOfOrigin; // ISO 3166-1 alpha-2 code, e.g. 'UG'
+  final String? manufacturerName; // e.g. 'Bayer AG' — optional, staff-entered
 
   const Drug({
     required this.id,
@@ -40,6 +41,7 @@ class Drug {
     this.discountPercent = 0,
     this.imageBase64,
     this.countryOfOrigin,
+    this.manufacturerName,
   });
 
   /// Stock status is always derived from live stockQuantity — never
@@ -57,6 +59,8 @@ class Drug {
   bool get hasDiscount => discountPercent > 0 && discountPercent < 100;
 
   bool get hasImage => imageBase64 != null && imageBase64!.isNotEmpty;
+
+  bool get hasManufacturer => manufacturerName != null && manufacturerName!.trim().isNotEmpty;
 
   /// The pre-discount price, derived from the live (already
   /// discounted) `price` — so staff only ever edit one number.
@@ -97,6 +101,7 @@ class Drug {
     int? discountPercent,
     String? imageBase64,
     String? countryOfOrigin,
+    String? manufacturerName,
   }) {
     return Drug(
       id: id,
@@ -109,6 +114,7 @@ class Drug {
       discountPercent: discountPercent ?? this.discountPercent,
       imageBase64: imageBase64 ?? this.imageBase64,
       countryOfOrigin: countryOfOrigin ?? this.countryOfOrigin,
+      manufacturerName: manufacturerName ?? this.manufacturerName,
     );
   }
 
@@ -124,6 +130,7 @@ class Drug {
       discountPercent: ((map['discountPercent'] as num?) ?? 0).toInt(),
       imageBase64: map['imageBase64'] as String?,
       countryOfOrigin: map['countryOfOrigin'] as String?,
+      manufacturerName: map['manufacturerName'] as String?,
     );
   }
 
@@ -138,6 +145,7 @@ class Drug {
       'discountPercent': discountPercent,
       'imageBase64': imageBase64,
       'countryOfOrigin': countryOfOrigin,
+      'manufacturerName': manufacturerName,
     };
   }
 }
