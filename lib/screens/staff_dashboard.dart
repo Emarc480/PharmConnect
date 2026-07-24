@@ -162,6 +162,21 @@ class StaffDashboard extends StatelessWidget {
               label: const Text('View Orders', style: TextStyle(fontWeight: FontWeight.w700)),
             ),
           ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.promoBannerManagement),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.primaryNavy,
+                side: BorderSide(color: AppTheme.borderGrey),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.photo_library_outlined),
+              label: const Text('Manage Promo Banners', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ),
         ],
       ),
     );
