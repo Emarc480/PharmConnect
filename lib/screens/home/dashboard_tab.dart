@@ -5,6 +5,7 @@ import '../../providers/drug_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/wishlist_provider.dart';
 import '../../widgets/product_grid_card.dart';
+import '../../widgets/promo_carousel.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/app_routes.dart';
 
@@ -196,6 +197,9 @@ class _DashboardTabState extends State<DashboardTab> {
             ],
           ),
           const SizedBox(height: 20),
+
+          // Special Offers carousel — staff-managed, up to 5 slots
+          const PromoCarousel(),
 
           // Quick-access feature tiles
           Row(
