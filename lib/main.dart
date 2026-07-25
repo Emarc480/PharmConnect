@@ -13,6 +13,7 @@ import 'providers/reminder_provider.dart';
 import 'providers/pharmacist_chat_provider.dart';
 import 'providers/wishlist_provider.dart';
 import 'providers/theme_mode_provider.dart';
+import 'providers/promo_banner_provider.dart';
 import 'core/constants/app_routes.dart';
 import 'core/theme/app_theme.dart';
 
@@ -48,6 +49,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ReminderProvider()),
         ChangeNotifierProvider(create: (_) => PharmacistChatProvider()),
         ChangeNotifierProvider(create: (_) => WishlistProvider()),
+        ChangeNotifierProvider(create: (_) => PromoBannerProvider()),
       ],
       child: const PharmConnectApp(),
     ),
