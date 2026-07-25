@@ -152,7 +152,7 @@ class _StatusStep extends StatelessWidget {
             status.label,
             style: TextStyle(
               fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-              color: isDone || isCurrent ? Colors.black87 : Colors.grey,
+              color: isDone || isCurrent ? Theme.of(context).colorScheme.onSurface : Colors.grey,
             ),
           ),
         ),

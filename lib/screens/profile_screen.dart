@@ -18,9 +18,7 @@ class ProfileScreen extends StatelessWidget {
     final isStaff = user?.role == UserRole.staff;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
         title: const Text('Account'),
       ),
       body: SafeArea(
@@ -360,7 +358,7 @@ class _StatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.navBarSurface(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppTheme.borderGrey),
         ),
@@ -422,7 +420,7 @@ class _MenuCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.navBarSurface(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.borderGrey),
       ),
@@ -449,7 +447,7 @@ class _MenuTile extends StatelessWidget {
     return Column(
       children: [
         ListTile(
-          leading: Icon(icon, color: AppTheme.primaryNavy),
+          leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
           title: Text(
             label,
             style: const TextStyle(fontWeight: FontWeight.w600),

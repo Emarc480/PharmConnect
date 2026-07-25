@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
+import '../core/theme/app_theme.dart';
 
 /// Shared building blocks for both chat screens (customer
 /// AskPharmacistScreen and staff StaffMessageThreadScreen) so a
@@ -41,7 +42,7 @@ class ChatDateDivider extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           decoration: BoxDecoration(
-            color: Colors.grey.shade200,
+            color: AppTheme.navBarSurface(context),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -80,7 +81,7 @@ class ChatBubble extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(14, 9, 10, 7),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.74),
         decoration: BoxDecoration(
-          color: isMine ? mineColor : Colors.grey.shade100,
+          color: isMine ? mineColor : AppTheme.navBarSurface(context),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -98,7 +99,7 @@ class ChatBubble extends StatelessWidget {
               chatTimeLabel(sentAt),
               style: TextStyle(
                 fontSize: 10,
-                color: isMine ? Colors.white.withValues(alpha: 0.7) : Colors.grey.shade500,
+                color: isMine ? Colors.white : Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],
