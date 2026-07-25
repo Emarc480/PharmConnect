@@ -25,16 +25,27 @@ class AppTheme {
     brightness: Brightness.dark,
     primaryColor: primaryNavy,
     scaffoldBackgroundColor: const Color(0xFF121212),
-    colorScheme: ColorScheme.fromSeed(seedColor: primaryNavy, brightness: Brightness.dark),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primaryNavy,
+      brightness: Brightness.dark,
+    ),
     appBarTheme: const AppBarTheme(
       backgroundColor: Color(0xFF1E1E1E),
       foregroundColor: Colors.white,
       elevation: 0,
     ),
-    inputDecorationTheme: const InputDecorationTheme(border: UnderlineInputBorder()),
+    inputDecorationTheme: const InputDecorationTheme(
+      border: UnderlineInputBorder(),
+    ),
   );
 
   static Color navBarSurface(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF1E1E1E)
+        : Colors.white;
+  }
+
+  static Color navBarGlassColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? const Color(0xFF1E1E1E)
         : Colors.white;
