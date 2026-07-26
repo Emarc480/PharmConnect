@@ -18,9 +18,7 @@ class ProfileScreen extends StatelessWidget {
     final isStaff = user?.role == UserRole.staff;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
         title: const Text('Account'),
       ),
       body: SafeArea(
@@ -74,14 +72,6 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                       _MenuTile(
-                        icon: Icons.chat_bubble_outline,
-                        label: 'Customer Messages',
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          AppRoutes.staffMessages,
-                        ),
-                      ),
-                      _MenuTile(
                         icon: Icons.settings_outlined,
                         label: 'App Settings',
                         onTap: () =>
@@ -117,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
                             Navigator.pushNamed(context, AppRoutes.reminders),
                       ),
                       _MenuTile(
-                        icon: Icons.support_agent_outlined,
+                        icon: Icons.smart_toy_outlined,
                         label: 'Ask a Pharmacist',
                         onTap: () => Navigator.pushNamed(
                           context,
@@ -158,7 +148,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Center(
               child: Text(
-                'PharmConnect · v1.2.2',
+                'PharmConnect · v1.2.3',
                 style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
               ),
             ),
@@ -360,7 +350,7 @@ class _StatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.navBarSurface(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppTheme.borderGrey),
         ),
@@ -422,7 +412,7 @@ class _MenuCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.navBarSurface(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.borderGrey),
       ),
@@ -449,7 +439,7 @@ class _MenuTile extends StatelessWidget {
     return Column(
       children: [
         ListTile(
-          leading: Icon(icon, color: AppTheme.primaryNavy),
+          leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
           title: Text(
             label,
             style: const TextStyle(fontWeight: FontWeight.w600),

@@ -1,12 +1,12 @@
-/// One message in an "Ask a Pharmacist" thread. Threads are keyed by
-/// the customer's uid (threadId == customerId), so each customer has
-/// exactly one running conversation with the pharmacy's staff.
+/// One message in a customer's "Ask a Pharmacist" AI chat thread.
+/// Threads are keyed by the customer's uid (threadId == customerId),
+/// so each customer has exactly one running conversation with the bot.
 class ChatMessage {
   final String id;
   final String threadId;
   final String senderId;
   final String senderName;
-  final bool isStaff;
+  final bool isBot;
   final String text;
   final DateTime sentAt;
 
@@ -15,7 +15,7 @@ class ChatMessage {
     required this.threadId,
     required this.senderId,
     required this.senderName,
-    required this.isStaff,
+    required this.isBot,
     required this.text,
     required this.sentAt,
   });
@@ -26,7 +26,7 @@ class ChatMessage {
       threadId: (map['threadId'] as String?) ?? '',
       senderId: (map['senderId'] as String?) ?? '',
       senderName: (map['senderName'] as String?) ?? '',
-      isStaff: (map['isStaff'] as bool?) ?? false,
+      isBot: (map['isBot'] as bool?) ?? false,
       text: (map['text'] as String?) ?? '',
       sentAt: DateTime.fromMillisecondsSinceEpoch(
         (map['sentAtMs'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
@@ -39,7 +39,7 @@ class ChatMessage {
       'threadId': threadId,
       'senderId': senderId,
       'senderName': senderName,
-      'isStaff': isStaff,
+      'isBot': isBot,
       'text': text,
       'sentAtMs': sentAt.millisecondsSinceEpoch,
     };

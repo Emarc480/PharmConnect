@@ -56,7 +56,7 @@ class _DashboardTabState extends State<DashboardTab> {
                       label: Text(category),
                       selected: isSelected,
                       selectedColor: AppTheme.primaryNavy,
-                      labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87),
+                      labelStyle: TextStyle(color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface),
                       onSelected: (_) {
                         drugProvider.setCategory(category);
                         Navigator.pop(sheetContext);
@@ -224,7 +224,7 @@ class _DashboardTabState extends State<DashboardTab> {
               const SizedBox(width: 12),
               Expanded(
                 child: _QuickActionCard(
-                  icon: Icons.chat_bubble_outline,
+                  icon: Icons.smart_toy_outlined,
                   label: 'Ask a\nPharmacist',
                   color: AppTheme.lowStockOrange,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.askPharmacist),

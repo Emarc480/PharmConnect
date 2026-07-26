@@ -56,11 +56,14 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
     }
 
-    match /pharmacist_messages/{messageId} {
-      allow read: if isStaff() || (isSignedIn() && resource.data.threadId == request.auth.uid);
-      allow create: if isSignedIn() &&
-        request.resource.data.senderId == request.auth.uid &&
-        (isStaff() || request.resource.data.threadId == request.auth.uid);
+    match /ai_chat_messages/{messageId} {
+      // No staff side any more — the AI pharmacist chat is strictly
+      // between a customer and the bot, so only the owner of the
+      // thread can read or write it. The bot's own reply messages are
+      // written by the customer's own client (senderId: 'ai-bot',
+      // but threadId is still the signed-in customer's uid).
+      allow read: if isSignedIn() && resource.data.threadId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.threadId == request.auth.uid;
     }
 
     match /wishlists/{userId} {

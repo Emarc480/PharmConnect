@@ -10,7 +10,7 @@ import 'providers/order_provider.dart';
 import 'providers/refill_provider.dart';
 import 'providers/prescription_provider.dart';
 import 'providers/reminder_provider.dart';
-import 'providers/pharmacist_chat_provider.dart';
+import 'providers/ai_pharmacist_provider.dart';
 import 'providers/wishlist_provider.dart';
 import 'providers/theme_mode_provider.dart';
 import 'providers/promo_banner_provider.dart';
@@ -47,7 +47,7 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider(create: (_) => PrescriptionProvider()),
         ChangeNotifierProvider(create: (_) => ReminderProvider()),
-        ChangeNotifierProvider(create: (_) => PharmacistChatProvider()),
+        ChangeNotifierProvider(create: (_) => AiPharmacistProvider()),
         ChangeNotifierProvider(create: (_) => WishlistProvider()),
         ChangeNotifierProvider(create: (_) => PromoBannerProvider()),
       ],
