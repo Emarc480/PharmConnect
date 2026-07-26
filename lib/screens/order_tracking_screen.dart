@@ -562,21 +562,12 @@ class _TimelineStep extends StatelessWidget {
         const SizedBox(width: 12),
         Padding(
           padding: const EdgeInsets.only(bottom: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                status.timelineLabel,
-                style: TextStyle(
-                  fontWeight: isCurrent || isDone ? FontWeight.w700 : FontWeight.w500,
-                  color: isDone || isCurrent ? Theme.of(context).colorScheme.onSurface : Colors.grey,
-                ),
-              ),
-              Text(
-                timestamp != null ? _formatStamp(timestamp) : 'Pending',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-              ),
-            ],
+          child: Text(
+            status.label,
+            style: TextStyle(
+              fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+              color: isDone || isCurrent ? Theme.of(context).colorScheme.onSurface : Colors.grey,
+            ),
           ),
         ),
       ],

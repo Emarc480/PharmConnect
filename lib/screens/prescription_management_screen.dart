@@ -88,7 +88,7 @@ class _FilterChip extends StatelessWidget {
       onSelected: (_) => onTap(),
       selectedColor: AppTheme.primaryNavy,
       labelStyle: TextStyle(
-        color: selected ? Colors.white : Colors.black87,
+        color: selected ? Colors.white : Theme.of(context).colorScheme.onSurface,
         fontWeight: FontWeight.w600,
       ),
       backgroundColor: Colors.grey.shade100,

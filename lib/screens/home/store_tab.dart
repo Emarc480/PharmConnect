@@ -61,7 +61,7 @@ class StoreTab extends StatelessWidget {
                   label: Text(category),
                   selected: isSelected,
                   selectedColor: AppTheme.primaryNavy,
-                  labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87),
+                  labelStyle: TextStyle(color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface),
                   onSelected: (_) => drugProvider.setCategory(category),
                 );
               },

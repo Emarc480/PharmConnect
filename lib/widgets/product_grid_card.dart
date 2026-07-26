@@ -45,7 +45,7 @@ class ProductGridCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(GridCardStyle.radius),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.navBarSurface(context),
           borderRadius: BorderRadius.circular(GridCardStyle.radius),
           border: GridCardStyle.hairline,
           boxShadow: GridCardStyle.shadow,
@@ -77,7 +77,11 @@ class ProductGridCard extends StatelessWidget {
                                   color: Colors.white.withValues(alpha: 0.55),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(categoryIcon(drug.category), size: 30, color: catColor),
+                                child: Icon(
+                                  categoryIcon(drug.category),
+                                  size: 30,
+                                  color: catColor,
+                                ),
                               ),
                             ),
                           ),
@@ -92,26 +96,30 @@ class ProductGridCard extends StatelessWidget {
                             icon: Icons.local_offer_rounded,
                           )
                         : isOutOfStock
-                            ? GridCardBadge(
-                                label: 'Out of stock',
-                                color: Colors.grey.shade700,
-                                icon: Icons.block_rounded,
-                              )
-                            : isLowStock
-                                ? const GridCardBadge(
-                                    label: 'Low stock',
-                                    color: Color(0xFFEA580C),
-                                    icon: Icons.bolt_rounded,
-                                  )
-                                : const SizedBox.shrink(),
+                        ? GridCardBadge(
+                            label: 'Out of stock',
+                            color: Colors.grey.shade700,
+                            icon: Icons.block_rounded,
+                          )
+                        : isLowStock
+                        ? const GridCardBadge(
+                            label: 'Low stock',
+                            color: Color(0xFFEA580C),
+                            icon: Icons.bolt_rounded,
+                          )
+                        : const SizedBox.shrink(),
                   ),
                   Positioned(
                     right: 8,
                     top: 8,
                     child: GlassIconButton(
-                      icon: isWishlisted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      icon: isWishlisted
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
                       onTap: onToggleWishlist,
-                      color: isWishlisted ? const Color(0xFFE11D48) : Colors.grey.shade700,
+                      color: isWishlisted
+                          ? const Color(0xFFE11D48)
+                          : Colors.grey.shade700,
                     ),
                   ),
                 ],
@@ -135,32 +143,51 @@ class ProductGridCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  CategoryPill(label: drug.category, icon: categoryIcon(drug.category), color: catColor),
+                  CategoryPill(
+                    label: drug.category,
+                    icon: categoryIcon(drug.category),
+                    color: catColor,
+                  ),
                   if (drug.hasManufacturer) ...[
                     const SizedBox(height: 6),
                     Text(
                       'Manufactured by:',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade500),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade500,
+                      ),
                     ),
                     Text(
                       drug.manufacturerName!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
                     ),
                   ],
                   if (countryName != null) ...[
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        Text(countryFlagEmoji(drug.countryOfOrigin), style: const TextStyle(fontSize: 12)),
+                        Text(
+                          countryFlagEmoji(drug.countryOfOrigin),
+                          style: const TextStyle(fontSize: 12),
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             countryName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ),
                       ],
@@ -203,12 +230,17 @@ class ProductGridCard extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: isOutOfStock ? null : onAddToCart,
                       icon: Icon(
-                        isOutOfStock ? Icons.remove_shopping_cart_rounded : Icons.add_shopping_cart_rounded,
+                        isOutOfStock
+                            ? Icons.remove_shopping_cart_rounded
+                            : Icons.add_shopping_cart_rounded,
                         size: 15,
                       ),
                       label: Text(
                         isOutOfStock ? 'Out of Stock' : 'Add to Cart',
-                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryNavy,
@@ -217,7 +249,9 @@ class ProductGridCard extends StatelessWidget {
                         foregroundColor: Colors.white,
                         elevation: 0,
                         padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
