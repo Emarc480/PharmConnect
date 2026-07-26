@@ -130,7 +130,7 @@ class StaffDashboard extends StatelessWidget {
           else
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppTheme.navBarSurface(context),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppTheme.borderGrey),
               ),
@@ -211,7 +211,7 @@ class _StatCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.navBarSurface(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppTheme.borderGrey),
         ),
@@ -252,6 +252,8 @@ class _RecentOrderRow extends StatelessWidget {
         return AppTheme.primaryNavy;
       case OrderStatus.shipped:
         return AppTheme.primaryNavy;
+      case OrderStatus.arrivingSoon:
+        return AppTheme.inStockGreen;
       case OrderStatus.delivered:
         return AppTheme.inStockGreen;
     }
