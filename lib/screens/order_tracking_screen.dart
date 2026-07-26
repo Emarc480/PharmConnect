@@ -99,7 +99,7 @@ class OrderTrackingScreen extends StatelessWidget {
                   Text(
                     _estimatedWindow(order),
                     style: const TextStyle(
-                      color: AppTheme.inStockGreen,
+                      color: AppTheme.primaryNavy,
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
                     ),
@@ -236,7 +236,7 @@ class _TrackOrderHeader extends StatelessWidget {
   }
 }
 
-/// The dark-green order-number + live-status bar at the top.
+/// The order-number + live-status bar at the top.
 class _StatusBanner extends StatelessWidget {
   final String orderId;
   final String headline;
@@ -248,7 +248,7 @@ class _StatusBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.inStockGreen,
+        color: AppTheme.primaryNavy,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -276,7 +276,7 @@ class _StatusBanner extends StatelessWidget {
             ),
             child: Text(
               headline,
-              style: const TextStyle(color: AppTheme.inStockGreen, fontWeight: FontWeight.w700, fontSize: 12),
+              style: const TextStyle(color: AppTheme.primaryNavy, fontWeight: FontWeight.w700, fontSize: 12),
             ),
           ),
         ],
@@ -319,9 +319,9 @@ class _TrackingMap extends StatelessWidget {
       height: _cardHeight,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppTheme.inStockGreen.withValues(alpha: 0.06),
+        color: AppTheme.primaryNavy.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.inStockGreen.withValues(alpha: 0.25)),
+        border: Border.all(color: AppTheme.primaryNavy.withValues(alpha: 0.25)),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -377,7 +377,7 @@ class _MapPin extends StatelessWidget {
         Container(
           width: 28,
           height: 28,
-          decoration: const BoxDecoration(color: AppTheme.inStockGreen, shape: BoxShape.circle),
+          decoration: const BoxDecoration(color: AppTheme.primaryNavy, shape: BoxShape.circle),
           child: Icon(icon, color: Colors.white, size: 15),
         ),
         CustomPaint(size: const Size(6, 8), painter: _PinTailPainter()),
@@ -389,7 +389,7 @@ class _MapPin extends StatelessWidget {
 class _PinTailPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = AppTheme.inStockGreen;
+    final paint = Paint()..color = AppTheme.primaryNavy;
     final path = Path()
       ..moveTo(0, 0)
       ..lineTo(size.width, 0)
@@ -414,7 +414,7 @@ class _RoutePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppTheme.inStockGreen.withValues(alpha: 0.7)
+      ..color = AppTheme.primaryNavy.withValues(alpha: 0.7)
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -491,8 +491,8 @@ class _RiderCard extends StatelessWidget {
             onPressed: () => _placeholderAction(context, 'Calling'),
             icon: const Icon(Icons.call_outlined),
             style: IconButton.styleFrom(
-              backgroundColor: AppTheme.inStockGreen.withValues(alpha: 0.1),
-              foregroundColor: AppTheme.inStockGreen,
+              backgroundColor: AppTheme.primaryNavy.withValues(alpha: 0.1),
+              foregroundColor: AppTheme.primaryNavy,
             ),
           ),
           const SizedBox(width: 6),
@@ -528,7 +528,7 @@ class _TimelineStep extends StatelessWidget {
     final isCurrent = stepIndex == currentIndex;
     final timestamp = order.timestampFor(status);
 
-    final color = isDone || isCurrent ? AppTheme.inStockGreen : Colors.grey.shade300;
+    final color = isDone || isCurrent ? AppTheme.primaryNavy : Colors.grey.shade300;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -555,7 +555,7 @@ class _TimelineStep extends StatelessWidget {
               Container(
                 width: 2,
                 height: 34,
-                color: isDone ? AppTheme.inStockGreen : Colors.grey.shade300,
+                color: isDone ? AppTheme.primaryNavy : Colors.grey.shade300,
               ),
           ],
         ),
