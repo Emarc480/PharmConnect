@@ -224,7 +224,7 @@ class _DashboardTabState extends State<DashboardTab> {
               const SizedBox(width: 12),
               Expanded(
                 child: _QuickActionCard(
-                  icon: Icons.chat_bubble_outline,
+                  icon: Icons.smart_toy_outlined,
                   label: 'Ask a\nPharmacist',
                   color: AppTheme.lowStockOrange,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.askPharmacist),

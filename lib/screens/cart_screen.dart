@@ -135,10 +135,11 @@ class CartScreen extends StatelessWidget {
         items: cart.items,
         deliveryAddress: 'Plot 7 Ntinda Road, Kampala',
       );
+      final total = order.total;
       cart.clear();
       navigator.pushReplacementNamed(
-        AppRoutes.orderTracking,
-        arguments: order.id,
+        AppRoutes.payment,
+        arguments: {'orderId': order.id, 'amount': total},
       );
     } catch (_) {
       messenger.showSnackBar(

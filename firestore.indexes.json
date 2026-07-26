@@ -17,7 +17,7 @@
       ]
     },
     {
-      "collectionGroup": "pharmacist_messages",
+      "collectionGroup": "ai_chat_messages",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "threadId", "order": "ASCENDING" },

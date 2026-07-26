@@ -252,6 +252,8 @@ class _RecentOrderRow extends StatelessWidget {
         return AppTheme.primaryNavy;
       case OrderStatus.shipped:
         return AppTheme.primaryNavy;
+      case OrderStatus.arrivingSoon:
+        return AppTheme.inStockGreen;
       case OrderStatus.delivered:
         return AppTheme.inStockGreen;
     }

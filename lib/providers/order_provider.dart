@@ -135,10 +135,23 @@ class OrderProvider extends ChangeNotifier {
     if (order == null) return;
     final next = order.status.next;
     if (next == null) return;
-    await _db.collection('orders').doc(orderId).update({
+    final now = DateTime.now();
+    final update = <String, dynamic>{
       'status': next.name,
-      'lastUpdatedMs': DateTime.now().millisecondsSinceEpoch,
-    });
+      'lastUpdatedMs': now.millisecondsSinceEpoch,
+      'statusTimestampsMs': {
+        ...order.statusTimestamps.map((k, v) => MapEntry(k, v.millisecondsSinceEpoch)),
+        next.name: now.millisecondsSinceEpoch,
+      },
+    };
+    // Assign a rider the moment the order heads out for delivery, if
+    // one hasn't been assigned already — powers the "Your Rider" card.
+    if (order.riderName == null && next.index >= OrderStatus.shipped.index) {
+      final rider = DemoRider.forOrderId(order.id);
+      update['riderName'] = rider.name;
+      update['riderRating'] = rider.rating;
+    }
+    await _db.collection('orders').doc(orderId).update(update);
   }
 
   Future<void> cancelOrder(String orderId) async {

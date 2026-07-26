@@ -36,7 +36,16 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow read: if isStaff() || (isSignedIn() && resource.data.customerId == request.auth.uid);
       allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
-      allow update, delete: if isStaff();
+      // Staff can update anything. The order's own customer may only
+      // update the payment-status fields (used by the in-app demo
+      // payment simulation) — never quantities, status, or anything
+      // else on someone else's order.
+      allow update: if isStaff() ||
+        (isSignedIn() &&
+         resource.data.customerId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['paymentStatus', 'paymentMethod', 'paymentReference']));
+      allow delete: if isStaff();
     }
 
     match /refill_requests/{requestId} {
@@ -56,11 +65,14 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
     }
 
-    match /pharmacist_messages/{messageId} {
-      allow read: if isStaff() || (isSignedIn() && resource.data.threadId == request.auth.uid);
-      allow create: if isSignedIn() &&
-        request.resource.data.senderId == request.auth.uid &&
-        (isStaff() || request.resource.data.threadId == request.auth.uid);
+    match /ai_chat_messages/{messageId} {
+      // No staff side any more — the AI pharmacist chat is strictly
+      // between a customer and the bot, so only the owner of the
+      // thread can read or write it. The bot's own reply messages are
+      // written by the customer's own client (senderId: 'ai-bot',
+      // but threadId is still the signed-in customer's uid).
+      allow read: if isSignedIn() && resource.data.threadId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.threadId == request.auth.uid;
     }
 
     match /wishlists/{userId} {

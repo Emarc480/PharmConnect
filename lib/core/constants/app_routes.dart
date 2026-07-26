@@ -8,6 +8,7 @@ import '../../screens/staff_home_shell.dart';
 import '../../screens/inventory_screen.dart';
 import '../../screens/drug_detail_screen.dart';
 import '../../screens/cart_screen.dart';
+import '../../screens/payment_screen.dart';
 import '../../screens/order_tracking_screen.dart';
 import '../../screens/order_management_screen.dart';
 import '../../screens/orders_list_screen.dart';
@@ -16,8 +17,7 @@ import '../../screens/refill_management_screen.dart';
 import '../../screens/profile_screen.dart';
 import '../../screens/prescription_upload_screen.dart';
 import '../../screens/reminders_screen.dart';
-import '../../screens/ask_pharmacist_screen.dart';
-import '../../screens/staff_messages_screen.dart';
+import '../../screens/ai_pharmacist_screen.dart';
 import '../../screens/prescription_management_screen.dart';
 import '../../widgets/role_guard.dart';
 import '../../screens/app_settings_screen.dart';
@@ -34,6 +34,7 @@ class AppRoutes {
   static const String orders = '/orders';
   static const String drugDetail = '/drug-detail';
   static const String cart = '/cart';
+  static const String payment = '/payment';
   static const String orderTracking = '/order-tracking';
   static const String myOrders = '/my-orders';
   static const String refill = '/refill';
@@ -42,7 +43,6 @@ class AppRoutes {
   static const String prescription = '/prescription';
   static const String reminders = '/reminders';
   static const String askPharmacist = '/ask-pharmacist';
-  static const String staffMessages = '/staff-messages';
   static const String prescriptionManagement = '/prescription-management';
   static const String appSettings = '/app-settings';
   static const String promoBannerManagement = '/promo-banner-management';
@@ -61,8 +61,7 @@ class AppRoutes {
     profile: (context) => const ProfileScreen(),
     prescription: (context) => const PrescriptionUploadScreen(),
     reminders: (context) => const RemindersScreen(),
-    askPharmacist: (context) => const AskPharmacistScreen(),
-    staffMessages: (context) => const StaffOnly(child: StaffMessagesScreen()),
+    askPharmacist: (context) => const AiPharmacistScreen(),
     prescriptionManagement: (context) => const StaffOnly(child: PrescriptionManagementScreen()),
     appSettings: (context) => const AppSettingsScreen(),
     promoBannerManagement: (context) => const StaffOnly(child: PromoBannerManagementScreen()),
@@ -80,6 +79,14 @@ class AppRoutes {
         final orderId = settings.arguments as String;
         return MaterialPageRoute(
           builder: (context) => OrderTrackingScreen(orderId: orderId),
+        );
+      case payment:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (context) => PaymentScreen(
+            orderId: args['orderId'] as String,
+            amount: (args['amount'] as num).toDouble(),
+          ),
         );
       default:
         return null;
