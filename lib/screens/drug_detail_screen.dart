@@ -46,7 +46,11 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
                       height: 160,
                       color: Colors.grey.shade100,
                       child: const Center(
-                        child: Icon(Icons.medication, size: 56, color: Colors.grey),
+                        child: Icon(
+                          Icons.medication,
+                          size: 56,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
             ),
@@ -57,7 +61,10 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
                 Expanded(
                   child: Text(
                     drug.name,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 Text(
@@ -79,7 +86,10 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
                 ),
                 if (countryNameForCode(drug.countryOfOrigin) != null) ...[
                   Text('  •  ', style: TextStyle(color: Colors.grey.shade400)),
-                  Text(countryFlagEmoji(drug.countryOfOrigin), style: const TextStyle(fontSize: 14)),
+                  Text(
+                    countryFlagEmoji(drug.countryOfOrigin),
+                    style: const TextStyle(fontSize: 14),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     'Made in ${countryNameForCode(drug.countryOfOrigin)}',
@@ -96,7 +106,11 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
               ),
               Text(
                 drug.manufacturerName!,
-                style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black87, fontSize: 14),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 14,
+                ),
               ),
             ],
             const SizedBox(height: 4),
@@ -106,13 +120,16 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
                 color: drug.stockStatus == StockStatus.inStock
                     ? AppTheme.inStockGreen
                     : drug.stockStatus == StockStatus.lowStock
-                        ? AppTheme.lowStockOrange
-                        : Colors.grey,
+                    ? AppTheme.lowStockOrange
+                    : Colors.grey,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const Divider(height: 32),
-            const Text('Description', style: TextStyle(fontWeight: FontWeight.w700)),
+            const Text(
+              'Description',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 8),
             Container(
               width: double.infinity,
@@ -127,7 +144,10 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Quantity', style: TextStyle(fontWeight: FontWeight.w700)),
+            const Text(
+              'Quantity',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -142,7 +162,10 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
                   alignment: Alignment.center,
                   child: Text(
                     '$_quantity',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 _QtyButton(
@@ -158,9 +181,16 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
               onPressed: outOfStock
                   ? null
                   : () {
-                      context.read<CartProvider>().addToCart(drug, quantity: _quantity);
+                      context.read<CartProvider>().addToCart(
+                        drug,
+                        quantity: _quantity,
+                      );
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Added $_quantity × ${drug.name} to cart')),
+                        SnackBar(
+                          content: Text(
+                            'Added $_quantity × ${drug.name} to cart',
+                          ),
+                        ),
                       );
                       Navigator.pushNamed(context, AppRoutes.cart);
                     },
@@ -168,21 +198,29 @@ class _DrugDetailScreenState extends State<DrugDetailScreen> {
                 backgroundColor: AppTheme.primaryNavy,
                 foregroundColor: Colors.white,
                 minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: Text(outOfStock ? 'Out of Stock' : 'Add to Cart'),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () {
-                context.read<RefillProvider>().submitRequest(drugName: drug.name);
+                context.read<RefillProvider>().submitRequest(
+                  drugName: drug.name,
+                );
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Refill request sent for ${drug.name}')),
+                  SnackBar(
+                    content: Text('Refill request sent for ${drug.name}'),
+                  ),
                 );
               },
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text('Request Refill'),
             ),
@@ -211,7 +249,13 @@ class _QtyButton extends StatelessWidget {
           border: Border.all(color: AppTheme.borderGrey),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 18, color: onTap == null ? Colors.grey.shade300 : Colors.black87),
+        child: Icon(
+          icon,
+          size: 18,
+          color: onTap == null
+              ? Colors.grey.shade300
+              : Theme.of(context).colorScheme.onSurface,
+        ),
       ),
     );
   }

@@ -157,7 +157,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: isSelected ? AppTheme.inStockGreen : Colors.black87,
+                              color: isSelected ? AppTheme.inStockGreen : Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 2),

@@ -12,7 +12,6 @@ import '../core/constants/countries.dart';
 import '../core/theme/app_theme.dart';
 import '../widgets/grid_card_kit.dart';
 
-
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
 
@@ -34,8 +33,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Widget build(BuildContext context) {
     final drugProvider = context.watch<DrugProvider>();
     final drugs = drugProvider.allDrugs.where((drug) {
-      final matchesQuery = drug.name.toLowerCase().contains(_query.toLowerCase());
-      final matchesCategory = drugProvider.selectedCategory == 'All' ||
+      final matchesQuery = drug.name.toLowerCase().contains(
+        _query.toLowerCase(),
+      );
+      final matchesCategory =
+          drugProvider.selectedCategory == 'All' ||
           drug.category == drugProvider.selectedCategory;
       return matchesQuery && matchesCategory;
     }).toList();
@@ -101,26 +103,33 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (context, i) {
                         final category = drugProvider.categories[i];
-                        final isSelected = category == drugProvider.selectedCategory;
+                        final isSelected =
+                            category == drugProvider.selectedCategory;
                         return ChoiceChip(
                           avatar: category == 'All'
                               ? null
                               : Icon(
                                   categoryIcon(category),
                                   size: 16,
-                                  color: isSelected ? Colors.white : categoryColor(category),
+                                  color: isSelected
+                                      ? Colors.white
+                                      : categoryColor(category),
                                 ),
                           label: Text(category),
                           selected: isSelected,
                           selectedColor: Theme.of(context).colorScheme.primary,
-                          labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87),
+                          labelStyle: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : Theme.of(context).colorScheme.onSurface,
+                          ),
                           onSelected: (_) => drugProvider.setCategory(category),
                         );
                       },
                     ),
                   ),
                   const SizedBox(height: 8),
-                 Expanded(
+                  Expanded(
                     child: grouped.isEmpty
                         ? const Center(child: Text('No drugs found'))
                         : ListView(
@@ -136,21 +145,27 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: entry.value.length,
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    mainAxisSpacing: 14,
-                                    crossAxisSpacing: 14,
-                                    childAspectRatio: 0.44,
-                                  ),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        mainAxisSpacing: 14,
+                                        crossAxisSpacing: 14,
+                                        childAspectRatio: 0.44,
+                                      ),
                                   itemBuilder: (context, i) {
                                     final drug = entry.value[i];
                                     return _InventoryGridCard(
                                       drug: drug,
-                                      onTap: () => _showEditDrugSheet(context, drug),
+                                      onTap: () =>
+                                          _showEditDrugSheet(context, drug),
                                       onDecrement: drug.stockQuantity > 0
-                                          ? () => drugProvider.adjustStock(drug.id, -1)
+                                          ? () => drugProvider.adjustStock(
+                                              drug.id,
+                                              -1,
+                                            )
                                           : null,
-                                      onIncrement: () => drugProvider.adjustStock(drug.id, 1),
+                                      onIncrement: () =>
+                                          drugProvider.adjustStock(drug.id, 1),
                                     );
                                   },
                                 ),
@@ -217,7 +232,11 @@ class _CategorySectionHeader extends StatelessWidget {
         ),
         Text(
           '$count',
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade500,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
@@ -260,7 +279,7 @@ class _InventoryGridCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(GridCardStyle.radius),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.navBarSurface(context),
           borderRadius: BorderRadius.circular(GridCardStyle.radius),
           border: GridCardStyle.hairline,
           boxShadow: GridCardStyle.shadow,
@@ -292,7 +311,11 @@ class _InventoryGridCard extends StatelessWidget {
                                   color: Colors.white.withValues(alpha: 0.55),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(categoryIcon(drug.category), size: 30, color: catColor),
+                                child: Icon(
+                                  categoryIcon(drug.category),
+                                  size: 30,
+                                  color: catColor,
+                                ),
                               ),
                             ),
                           ),
@@ -303,14 +326,21 @@ class _InventoryGridCard extends StatelessWidget {
                       top: 10,
                       child: GridCardBadge(
                         label: isOutOfStock ? 'Out of stock' : 'Low stock',
-                        color: isOutOfStock ? Colors.grey.shade700 : AppTheme.lowStockOrange,
-                        icon: isOutOfStock ? Icons.block_rounded : Icons.bolt_rounded,
+                        color: isOutOfStock
+                            ? Colors.grey.shade700
+                            : AppTheme.lowStockOrange,
+                        icon: isOutOfStock
+                            ? Icons.block_rounded
+                            : Icons.bolt_rounded,
                       ),
                     ),
                   Positioned(
                     right: 8,
                     top: 8,
-                    child: GlassIconButton(icon: Icons.edit_outlined, onTap: onTap),
+                    child: GlassIconButton(
+                      icon: Icons.edit_outlined,
+                      onTap: onTap,
+                    ),
                   ),
                 ],
               ),
@@ -333,32 +363,51 @@ class _InventoryGridCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  CategoryPill(label: drug.category, icon: categoryIcon(drug.category), color: catColor),
+                  CategoryPill(
+                    label: drug.category,
+                    icon: categoryIcon(drug.category),
+                    color: catColor,
+                  ),
                   if (drug.hasManufacturer) ...[
                     const SizedBox(height: 6),
                     Text(
                       'Manufactured by:',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade500),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade500,
+                      ),
                     ),
                     Text(
                       drug.manufacturerName!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
                     ),
                   ],
                   if (countryName != null) ...[
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        Text(countryFlagEmoji(drug.countryOfOrigin), style: const TextStyle(fontSize: 12)),
+                        Text(
+                          countryFlagEmoji(drug.countryOfOrigin),
+                          style: const TextStyle(fontSize: 12),
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             countryName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ),
                       ],
@@ -383,23 +432,39 @@ class _InventoryGridCard extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        _StepperButton(icon: Icons.remove_rounded, onTap: onDecrement, color: _stockColor),
+                        _StepperButton(
+                          icon: Icons.remove_rounded,
+                          onTap: onDecrement,
+                          color: _stockColor,
+                        ),
                         Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
                                 '${drug.stockQuantity}',
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _stockColor),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: _stockColor,
+                                ),
                               ),
                               Text(
                                 'units',
-                                style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: _stockColor.withValues(alpha: 0.75)),
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w600,
+                                  color: _stockColor.withValues(alpha: 0.75),
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        _StepperButton(icon: Icons.add_rounded, onTap: onIncrement, color: _stockColor),
+                        _StepperButton(
+                          icon: Icons.add_rounded,
+                          onTap: onIncrement,
+                          color: _stockColor,
+                        ),
                       ],
                     ),
                   ),
@@ -417,7 +482,11 @@ class _InventoryGridCard extends StatelessWidget {
 /// (faded, no tap) when [onTap] is null — e.g. can't decrement below
 /// zero units.
 class _StepperButton extends StatelessWidget {
-  const _StepperButton({required this.icon, required this.onTap, required this.color});
+  const _StepperButton({
+    required this.icon,
+    required this.onTap,
+    required this.color,
+  });
 
   final IconData icon;
   final VoidCallback? onTap;
@@ -440,10 +509,20 @@ class _StepperButton extends StatelessWidget {
               color: enabled ? Colors.white : Colors.transparent,
               shape: BoxShape.circle,
               boxShadow: enabled
-                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 1))]
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ]
                   : null,
             ),
-            child: Icon(icon, size: 14, color: enabled ? color : color.withValues(alpha: 0.3)),
+            child: Icon(
+              icon,
+              size: 14,
+              color: enabled ? color : color.withValues(alpha: 0.3),
+            ),
           ),
         ),
       ),
@@ -468,18 +547,26 @@ class _DrugForm extends StatefulWidget {
 
 class _DrugFormState extends State<_DrugForm> {
   final _formKey = GlobalKey<FormState>();
-  late final _nameController = TextEditingController(text: widget.existingDrug?.name ?? '');
-  late final _manufacturerController =
-      TextEditingController(text: widget.existingDrug?.manufacturerName ?? '');
-  late final _stockController =
-      TextEditingController(text: widget.existingDrug?.stockQuantity.toString() ?? '');
-  late final _reorderLevelController =
-      TextEditingController(text: widget.existingDrug?.reorderLevel.toString() ?? '');
-  late final _priceController =
-      TextEditingController(text: widget.existingDrug?.price.toStringAsFixed(0) ?? '');
-  late final _discountController =
-      TextEditingController(text: widget.existingDrug?.discountPercent.toString() ?? '0');
-  late String _category = widget.existingDrug?.category ?? kDrugCategories.first;
+  late final _nameController = TextEditingController(
+    text: widget.existingDrug?.name ?? '',
+  );
+  late final _manufacturerController = TextEditingController(
+    text: widget.existingDrug?.manufacturerName ?? '',
+  );
+  late final _stockController = TextEditingController(
+    text: widget.existingDrug?.stockQuantity.toString() ?? '',
+  );
+  late final _reorderLevelController = TextEditingController(
+    text: widget.existingDrug?.reorderLevel.toString() ?? '',
+  );
+  late final _priceController = TextEditingController(
+    text: widget.existingDrug?.price.toStringAsFixed(0) ?? '',
+  );
+  late final _discountController = TextEditingController(
+    text: widget.existingDrug?.discountPercent.toString() ?? '0',
+  );
+  late String _category =
+      widget.existingDrug?.category ?? kDrugCategories.first;
 
   /// ISO country code (e.g. 'UG') for the "Country of origin"
   /// dropdown. Null/unselected is allowed — country of manufacture
@@ -512,7 +599,11 @@ class _DrugFormState extends State<_DrugForm> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final picked = await ImagePicker().pickImage(source: source, maxWidth: 800, imageQuality: 60);
+      final picked = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 800,
+        imageQuality: 60,
+      );
       if (picked != null) {
         setState(() {
           _pickedImage = File(picked.path);
@@ -528,10 +619,13 @@ class _DrugFormState extends State<_DrugForm> {
   }
 
   void _showSourceSheet() {
-    final canRemove = _pickedImage != null || (_hasExistingPhoto && !_removeExistingPhoto);
+    final canRemove =
+        _pickedImage != null || (_hasExistingPhoto && !_removeExistingPhoto);
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (sheetContext) => SafeArea(
         child: Wrap(
           children: [
@@ -554,7 +648,10 @@ class _DrugFormState extends State<_DrugForm> {
             if (canRemove)
               ListTile(
                 leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: const Text('Remove photo', style: TextStyle(color: Colors.red)),
+                title: const Text(
+                  'Remove photo',
+                  style: TextStyle(color: Colors.red),
+                ),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   setState(() {
@@ -572,7 +669,8 @@ class _DrugFormState extends State<_DrugForm> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-    final showExistingPhoto = _hasExistingPhoto && !_removeExistingPhoto && _pickedImage == null;
+    final showExistingPhoto =
+        _hasExistingPhoto && !_removeExistingPhoto && _pickedImage == null;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset + 16),
@@ -585,7 +683,9 @@ class _DrugFormState extends State<_DrugForm> {
             children: [
               Text(
                 widget.isEditing ? 'Edit drug' : 'Add drug',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 16),
               InkWell(
@@ -600,31 +700,47 @@ class _DrugFormState extends State<_DrugForm> {
                   child: _pickedImage != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.file(_pickedImage!, width: double.infinity, fit: BoxFit.cover),
+                          child: Image.file(
+                            _pickedImage!,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
                         )
                       : showExistingPhoto
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.memory(
-                                base64Decode(widget.existingDrug!.imageBase64!),
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_a_photo_outlined, color: Colors.grey.shade500),
-                                const SizedBox(height: 6),
-                                Text('Add a photo (optional)', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                              ],
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(
+                            base64Decode(widget.existingDrug!.imageBase64!),
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_a_photo_outlined,
+                              color: Colors.grey.shade500,
                             ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Add a photo (optional)',
+                              style: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Drug name', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Drug name',
+                  border: OutlineInputBorder(),
+                ),
                 validator: _requiredText,
               ),
               const SizedBox(height: 12),
@@ -639,7 +755,10 @@ class _DrugFormState extends State<_DrugForm> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _category,
-                decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  border: OutlineInputBorder(),
+                ),
                 items: [
                   for (final category in kDrugCategories)
                     DropdownMenuItem(
@@ -647,7 +766,11 @@ class _DrugFormState extends State<_DrugForm> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(categoryIcon(category), size: 18, color: categoryColor(category)),
+                          Icon(
+                            categoryIcon(category),
+                            size: 18,
+                            color: categoryColor(category),
+                          ),
                           const SizedBox(width: 8),
                           Text(category),
                         ],
@@ -661,21 +784,30 @@ class _DrugFormState extends State<_DrugForm> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _stockController,
-                decoration: const InputDecoration(labelText: 'Stock', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Stock',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.number,
                 validator: _requiredNumber,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _reorderLevelController,
-                decoration: const InputDecoration(labelText: 'Reorder level', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Reorder level',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.number,
                 validator: _requiredNumber,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _priceController,
-                decoration: const InputDecoration(labelText: 'Price', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Price',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.number,
                 validator: _requiredNumber,
               ),
@@ -692,7 +824,10 @@ class _DrugFormState extends State<_DrugForm> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
                 initialValue: _countryCode,
-                decoration: const InputDecoration(labelText: 'Country of origin', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Country of origin',
+                  border: OutlineInputBorder(),
+                ),
                 items: [
                   const DropdownMenuItem<String?>(
                     value: null,
@@ -704,7 +839,10 @@ class _DrugFormState extends State<_DrugForm> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(countryFlagEmoji(country.code), style: const TextStyle(fontSize: 16)),
+                          Text(
+                            countryFlagEmoji(country.code),
+                            style: const TextStyle(fontSize: 16),
+                          ),
                           const SizedBox(width: 8),
                           Text(country.name),
                         ],
@@ -717,19 +855,29 @@ class _DrugFormState extends State<_DrugForm> {
               FilledButton(
                 onPressed: _isSaving || _isDeleting ? null : _save,
                 child: _isSaving
-                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : Text(widget.isEditing ? 'Save changes' : 'Save drug'),
               ),
               if (widget.isEditing) ...[
                 const SizedBox(height: 10),
                 OutlinedButton.icon(
                   onPressed: _isSaving || _isDeleting ? null : _confirmDelete,
-                  style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                  ),
                   icon: _isDeleting
                       ? const SizedBox(
                           height: 16,
                           width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.red,
+                          ),
                         )
                       : const Icon(Icons.delete_outline),
                   label: const Text('Delete drug'),
@@ -772,7 +920,9 @@ class _DrugFormState extends State<_DrugForm> {
 
       final existing = widget.existingDrug;
       final manufacturerText = _manufacturerController.text.trim();
-      final manufacturerName = manufacturerText.isEmpty ? null : manufacturerText;
+      final manufacturerName = manufacturerText.isEmpty
+          ? null
+          : manufacturerText;
       if (existing == null) {
         await drugProvider.addDrug(
           name: _nameController.text.trim(),
@@ -807,7 +957,11 @@ class _DrugFormState extends State<_DrugForm> {
       if (mounted) {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not save ${widget.isEditing ? 'changes' : 'drug'}. Please try again.')),
+          SnackBar(
+            content: Text(
+              'Could not save ${widget.isEditing ? 'changes' : 'drug'}. Please try again.',
+            ),
+          ),
         );
       }
     }
@@ -821,9 +975,14 @@ class _DrugFormState extends State<_DrugForm> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete drug?'),
-        content: Text('This permanently removes "${existing.name}" from inventory. This cannot be undone.'),
+        content: Text(
+          'This permanently removes "${existing.name}" from inventory. This cannot be undone.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
@@ -843,7 +1002,9 @@ class _DrugFormState extends State<_DrugForm> {
       if (mounted) {
         setState(() => _isDeleting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not delete drug. Please try again.')),
+          const SnackBar(
+            content: Text('Could not delete drug. Please try again.'),
+          ),
         );
       }
     }
