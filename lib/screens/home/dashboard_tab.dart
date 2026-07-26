@@ -277,53 +277,6 @@ class _DashboardTabState extends State<DashboardTab> {
             ),
           const SizedBox(height: 24),
 
-          // Wellness promo banner
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppTheme.primaryNavy.withValues(alpha: 0.08), AppTheme.primaryNavy.withValues(alpha: 0.18)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Boost Your\nDaily Wellness',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryNavy, height: 1.2),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Shop trusted supplements for family wellness.',
-                        style: TextStyle(color: Colors.grey.shade700, fontSize: 12.5),
-                      ),
-                      const SizedBox(height: 14),
-                      ElevatedButton(
-                        onPressed: widget.onBrowsePressed,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryNavy,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        ),
-                        child: const Text('Order Now'),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(Icons.medication_liquid_outlined, size: 64, color: AppTheme.primaryNavy.withValues(alpha: 0.35)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
           // Offers rail
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
