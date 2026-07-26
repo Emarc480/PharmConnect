@@ -156,7 +156,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Center(
               child: Text(
-                'PharmConnect · v1.2.3',
+                'PharmConnect · v1.2.4',
                 style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
               ),
             ),

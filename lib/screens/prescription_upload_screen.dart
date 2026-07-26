@@ -6,8 +6,11 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/app_theme.dart';
 import '../models/prescription_request.dart';
+import '../models/drug.dart';
 import '../providers/auth_provider.dart';
+import '../providers/drug_provider.dart';
 import '../providers/prescription_provider.dart';
+import '../services/prescription_ocr_service.dart';
 
 /// "Upload prescription" / "Type your order" screen. Customers either
 /// snap or pick a photo of a paper prescription, type out what they
@@ -23,6 +26,11 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
   final _orderController = TextEditingController();
   final _notesController = TextEditingController();
   File? _pickedImage;
+
+  final _ocrService = PrescriptionOcrService();
+  bool _isScanning = false;
+  String? _ocrRawText;
+  List<DrugMatch> _suggestions = [];  
 
   @override
   void dispose() {
@@ -47,6 +55,36 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
         const SnackBar(content: Text('Could not open the camera/gallery.')),
       );
     }
+  }
+
+  //reading the photo offine
+  Future<void> _runOcr() async {
+    final image = _pickedImage;
+    if (image == null) return;
+
+    setState(() => _isScanning = true);
+    try {
+      final text = await _ocrService.extractText(image);
+      if (!mounted) return;
+      final catalog = context.read<DrugProvider>().allDrugs;
+      final matches = _ocrService.matchDrugs(text, catalog);
+      setState(() {
+        _ocrRawText = text.trim();
+        _suggestions = matches;
+      });
+    } catch (_) {
+      // Silent failure is fine here — OCR is a convenience, not a
+      // requirement. Typing the order manually still works.
+    } finally {
+      if (mounted) setState(() => _isScanning = false);
+    }
+  }
+
+  //for the suggestions
+  void _applySuggestion(Drug drug) {
+    final current = _orderController.text.trim();
+    _orderController.text = current.isEmpty ? drug.name : '$current, ${drug.name}';
+    _orderController.selection = TextSelection.collapsed(offset: _orderController.text.length);
   }
 
   void _showSourceSheet() {
@@ -181,6 +219,53 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
                       ),
               ),
             ),
+
+            //OCR feedback
+            if (_pickedImage != null) ...[
+              const SizedBox(height: 12),
+              if (_isScanning)
+                Row(
+                  children: [
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Reading prescription…',
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                    ),
+                  ],
+                )
+              else if (_suggestions.isNotEmpty) ...[
+                Text(
+                  'Possible matches — tap to add to your order:',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _suggestions.map((match) {
+                    return ActionChip(
+                      avatar: const Icon(Icons.auto_awesome, size: 16),
+                      label: Text(match.drug.name),
+                      onPressed: () => _applySuggestion(match.drug),
+                    );
+                  }).toList(),
+                ),
+              ] else if (_ocrRawText != null && _ocrRawText!.isEmpty)
+                Text(
+                  "Couldn't make out any text in that photo — no problem, just type the order below.",
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                )
+              else if (_ocrRawText != null)
+                Text(
+                  "Couldn't confidently match anything in our catalog — type the order below, or double-check the photo is clear.",
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                ),
+            ],
             const SizedBox(height: 16),
             Row(
               children: [
