@@ -71,6 +71,7 @@ class AiPharmacistProvider extends ChangeNotifier {
   void _onStreamError(Object e) {
     // Surface it instead of hanging silently forever (e.g. a missing
     // Firestore composite index shows up here as failed-precondition).
+    debugPrint('AiPharmacistProvider stream error: $e');
     _isLoading = false;
     _error = e.toString();
     notifyListeners();

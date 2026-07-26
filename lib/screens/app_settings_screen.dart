@@ -137,22 +137,24 @@ class _ThemeModeCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.borderGrey),
       ),
-      child: Column(
-        children: ThemeMode.values.map((mode) {
-          final isLast = mode == ThemeMode.values.last;
-          return Column(
-            children: [
-              RadioListTile<ThemeMode>(
-                value: mode,
-                groupValue: currentMode,
-                onChanged: (m) => m != null ? onChanged(m) : null,
-                title: Text(_labelFor(mode)),
-                activeColor: Theme.of(context).colorScheme.primary,
-              ),
-              if (!isLast) Divider(height: 1, indent: 16, color: AppTheme.borderGrey),
-            ],
-          );
-        }).toList(),
+      child: RadioGroup<ThemeMode>(
+        groupValue: currentMode,
+        onChanged: (m) => m != null ? onChanged(m) : null,
+        child: Column(
+          children: ThemeMode.values.map((mode) {
+            final isLast = mode == ThemeMode.values.last;
+            return Column(
+              children: [
+                RadioListTile<ThemeMode>(
+                  value: mode,
+                  title: Text(_labelFor(mode)),
+                  activeColor: Theme.of(context).colorScheme.primary,
+                ),
+                if (!isLast) Divider(height: 1, indent: 16, color: AppTheme.borderGrey),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }

@@ -156,6 +156,19 @@ class Order {
   final String? riderName;
   final double? riderRating;
 
+  /// Set by the Cloud Functions payment backend once checkout starts —
+  /// never written directly by the client. 'unpaid' until a payment
+  /// attempt is initiated, then 'pending' -> 'paid' | 'failed'.
+  final String paymentStatus;
+
+  /// 'mtn' or 'airtel' once a payment attempt has been made; null
+  /// before then (e.g. order just created, or cash on delivery).
+  final String? paymentMethod;
+
+  /// The MTN referenceId / Airtel transactionId for the most recent
+  /// payment attempt on this order — used to poll status.
+  final String? paymentReference;
+
   Order({
     required this.id,
     required this.customerId,
@@ -167,6 +180,9 @@ class Order {
     Map<String, DateTime>? statusTimestamps,
     this.riderName,
     this.riderRating,
+    this.paymentStatus = 'unpaid',
+    this.paymentMethod,
+    this.paymentReference,
   })  : lastUpdated = lastUpdated ?? orderDate,
         statusTimestamps = statusTimestamps ?? {OrderStatus.placed.name: orderDate};
 
@@ -209,6 +225,9 @@ class Order {
             ),
       riderName: map['riderName'] as String?,
       riderRating: (map['riderRating'] as num?)?.toDouble(),
+      paymentStatus: (map['paymentStatus'] as String?) ?? 'unpaid',
+      paymentMethod: map['paymentMethod'] as String?,
+      paymentReference: map['paymentReference'] as String?,
     );
   }
 
@@ -224,6 +243,9 @@ class Order {
       'statusTimestampsMs': statusTimestamps.map((k, v) => MapEntry(k, v.millisecondsSinceEpoch)),
       if (riderName != null) 'riderName': riderName,
       if (riderRating != null) 'riderRating': riderRating,
+      'paymentStatus': paymentStatus,
+      if (paymentMethod != null) 'paymentMethod': paymentMethod,
+      if (paymentReference != null) 'paymentReference': paymentReference,
     };
   }
 }

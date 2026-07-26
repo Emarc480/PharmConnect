@@ -8,6 +8,7 @@ import '../../screens/staff_home_shell.dart';
 import '../../screens/inventory_screen.dart';
 import '../../screens/drug_detail_screen.dart';
 import '../../screens/cart_screen.dart';
+import '../../screens/payment_screen.dart';
 import '../../screens/order_tracking_screen.dart';
 import '../../screens/order_management_screen.dart';
 import '../../screens/orders_list_screen.dart';
@@ -33,6 +34,7 @@ class AppRoutes {
   static const String orders = '/orders';
   static const String drugDetail = '/drug-detail';
   static const String cart = '/cart';
+  static const String payment = '/payment';
   static const String orderTracking = '/order-tracking';
   static const String myOrders = '/my-orders';
   static const String refill = '/refill';
@@ -77,6 +79,14 @@ class AppRoutes {
         final orderId = settings.arguments as String;
         return MaterialPageRoute(
           builder: (context) => OrderTrackingScreen(orderId: orderId),
+        );
+      case payment:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (context) => PaymentScreen(
+            orderId: args['orderId'] as String,
+            amount: (args['amount'] as num).toDouble(),
+          ),
         );
       default:
         return null;

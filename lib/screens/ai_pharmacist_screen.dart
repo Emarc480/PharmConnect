@@ -245,6 +245,12 @@ class _AiPharmacistScreenState extends State<AiPharmacistScreen> {
                                       textAlign: TextAlign.center,
                                       style: TextStyle(color: Colors.grey.shade500),
                                     ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      chat.error ?? '',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -406,7 +412,7 @@ class _SuggestionChipsRow extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         itemCount: suggestions.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, i) => ActionChip(
           label: Text(suggestions[i], style: const TextStyle(fontSize: 12.5)),
           onPressed: () => onTap(suggestions[i]),

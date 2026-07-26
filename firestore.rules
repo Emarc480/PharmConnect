@@ -36,7 +36,16 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow read: if isStaff() || (isSignedIn() && resource.data.customerId == request.auth.uid);
       allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
-      allow update, delete: if isStaff();
+      // Staff can update anything. The order's own customer may only
+      // update the payment-status fields (used by the in-app demo
+      // payment simulation) — never quantities, status, or anything
+      // else on someone else's order.
+      allow update: if isStaff() ||
+        (isSignedIn() &&
+         resource.data.customerId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['paymentStatus', 'paymentMethod', 'paymentReference']));
+      allow delete: if isStaff();
     }
 
     match /refill_requests/{requestId} {
