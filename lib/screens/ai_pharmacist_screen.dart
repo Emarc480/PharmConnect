@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/ai_pharmacist_provider.dart';
+import '../providers/drug_provider.dart';
 import '../providers/order_provider.dart';
 import '../providers/reminder_provider.dart';
 import '../providers/prescription_provider.dart';
@@ -75,16 +76,19 @@ class _AiPharmacistScreenState extends State<AiPharmacistScreen> {
   }
 
   /// Live summary of the customer's own orders/reminders/prescriptions,
-  /// handed to Gemini so it can answer specific questions like
-  /// "where's my order?" — see CustomerContextBuilder.
+  /// plus the pharmacy's current drug catalog, handed to Gemini so it
+  /// can answer specific questions like "where's my order?" or "do you
+  /// have paracetamol?" — see CustomerContextBuilder.
   String _buildCustomerContext() {
     final myOrders = context.read<OrderProvider>().myOrders;
     final reminders = context.read<ReminderProvider>().reminders;
     final myPrescriptions = context.read<PrescriptionProvider>().myRequests;
+    final catalog = context.read<DrugProvider>().allDrugs;
     return CustomerContextBuilder.build(
       myOrders: myOrders,
       reminders: reminders,
       myPrescriptions: myPrescriptions,
+      catalog: catalog,
     );
   }
 
