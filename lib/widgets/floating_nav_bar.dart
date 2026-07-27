@@ -45,6 +45,8 @@ class FloatingNavBar extends StatelessWidget {
     final inactiveColor = theme.colorScheme.onSurfaceVariant;
 
     return GlassNavShell(
+      itemCount: _items.length,
+      activeIndex: currentIndex,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(_items.length, (i) {
