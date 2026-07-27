@@ -122,6 +122,21 @@ class OrderProvider extends ChangeNotifier {
             .toInt();
         final updatedStock = (currentStock - item.quantity).clamp(0, 999999);
         tx.update(drugRefs[item.drugId]!, {'stockQuantity': updatedStock});
+
+        // Audit trail entry for this sale — read-only for the
+        // customer client from here on (see firestore.rules), so
+        // Stock History stays a trustworthy record of every stock
+        // change, not just staff-driven ones.
+        tx.set(_db.collection('stock_movements').doc(), {
+          'drugId': item.drugId,
+          'drugName': item.drugName,
+          'delta': -item.quantity,
+          'resultingStock': updatedStock,
+          'reason': 'sale',
+          'staffId': uid,
+          'staffName': 'Order #${orderRef.id.length > 6 ? orderRef.id.substring(0, 6).toUpperCase() : orderRef.id.toUpperCase()}',
+          'timestampMs': now.millisecondsSinceEpoch,
+        });
       }
 
       tx.set(orderRef, order.toMap());
