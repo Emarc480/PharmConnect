@@ -59,6 +59,8 @@ class StaffFloatingNavBar extends StatelessWidget {
     final inactiveColor = theme.colorScheme.onSurfaceVariant;
     final activeColor = theme.colorScheme.primary;
     return GlassNavShell(
+      itemCount: _items.length,
+      activeIndex: currentIndex,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(_items.length, (i) {
