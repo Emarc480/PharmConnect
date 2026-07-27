@@ -72,6 +72,37 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                       _MenuTile(
+                        icon: Icons.bar_chart_rounded,
+                        label: 'Reports',
+                        onTap: () =>
+                            Navigator.pushNamed(context, AppRoutes.reports),
+                      ),
+                      _MenuTile(
+                        icon: Icons.history_rounded,
+                        label: 'Stock History',
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.stockHistory,
+                        ),
+                      ),
+                      _MenuTile(
+                        icon: Icons.notifications_none_rounded,
+                        label: 'Notifications',
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.staffNotifications,
+                        ),
+                      ),
+                      if (user?.isAdmin ?? false)
+                        _MenuTile(
+                          icon: Icons.admin_panel_settings_outlined,
+                          label: 'Staff Management',
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            AppRoutes.staffManagement,
+                          ),
+                        ),
+                      _MenuTile(
                         icon: Icons.settings_outlined,
                         label: 'App Settings',
                         onTap: () =>
