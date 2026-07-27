@@ -12,6 +12,14 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff';
     }
 
+    // Staff Management screen: only an account with isAdmin == true
+    // can promote/demote roles, grant admin, or deactivate other
+    // staff accounts.
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
@@ -19,8 +27,13 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isStaff();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) &&
-        request.resource.data.role == resource.data.role;
+      // A user can update their own doc, but never their own role or
+      // admin flag (no self-promotion). An admin can update anyone's
+      // doc, including role/isAdmin/isActive, for Staff Management.
+      allow update: if (isOwner(userId) &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.isAdmin == resource.data.isAdmin) ||
+        isAdmin();
     }
 
     match /drugs/{drugId} {
@@ -82,6 +95,23 @@ service cloud.firestore {
     match /promo_banners/{bannerId} {
       allow read: if isSignedIn();
       allow create, update, delete: if isStaff();
+    }
+
+    match /stock_movements/{movementId} {
+      // Append-only audit log — no update/delete rule means nobody
+      // (staff included) can edit or remove an entry once written.
+      // Staff can log any movement (restock, correction, damage,
+      // expired write-off). A signed-in customer may only write the
+      // automatic 'sale' entry attached to their own order, matching
+      // the customer-side stockQuantity decrement already allowed on
+      // /drugs — so a checkout keeps producing an audit trail even
+      // though the customer isn't staff.
+      allow read: if isStaff();
+      allow create: if isStaff() ||
+        (isSignedIn() &&
+         request.resource.data.reason == 'sale' &&
+         request.resource.data.staffId == request.auth.uid &&
+         request.resource.data.delta < 0);
     }
   }
 }
