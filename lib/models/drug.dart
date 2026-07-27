@@ -29,6 +29,8 @@ class Drug {
   final String? imageBase64;
   final String? countryOfOrigin; // ISO 3166-1 alpha-2 code, e.g. 'UG'
   final String? manufacturerName; // e.g. 'Bayer AG' — optional, staff-entered
+  final DateTime? expiryDate; // staff-entered, optional (older stock may predate this field)
+  final String? batchNumber; // optional lot/batch identifier, staff-entered
 
   const Drug({
     required this.id,
@@ -42,6 +44,8 @@ class Drug {
     this.imageBase64,
     this.countryOfOrigin,
     this.manufacturerName,
+    this.expiryDate,
+    this.batchNumber,
   });
 
   /// Stock status is always derived from live stockQuantity — never
@@ -61,6 +65,35 @@ class Drug {
   bool get hasImage => imageBase64 != null && imageBase64!.isNotEmpty;
 
   bool get hasManufacturer => manufacturerName != null && manufacturerName!.trim().isNotEmpty;
+
+  bool get hasExpiry => expiryDate != null;
+
+  bool get hasBatchNumber => batchNumber != null && batchNumber!.trim().isNotEmpty;
+
+  /// Past its expiry date — should no longer be sold (FR-adjacent
+  /// compliance rule for a real pharmacy).
+  bool get isExpired {
+    if (expiryDate == null) return false;
+    final today = DateTime.now();
+    final expiry = DateTime(expiryDate!.year, expiryDate!.month, expiryDate!.day);
+    return !expiry.isAfter(DateTime(today.year, today.month, today.day));
+  }
+
+  /// Within 30 days of expiring, but not expired yet — drives the
+  /// "Expiring Soon" dashboard stat and inventory badge.
+  bool get isExpiringSoon {
+    if (expiryDate == null || isExpired) return false;
+    return expiryDate!.difference(DateTime.now()).inDays <= 30;
+  }
+
+  String get expiryLabel {
+    if (expiryDate == null) return 'No expiry set';
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${expiryDate!.day} ${months[expiryDate!.month - 1]} ${expiryDate!.year}';
+  }
 
   /// The pre-discount price, derived from the live (already
   /// discounted) `price` — so staff only ever edit one number.
@@ -102,6 +135,8 @@ class Drug {
     String? imageBase64,
     String? countryOfOrigin,
     String? manufacturerName,
+    DateTime? expiryDate,
+    String? batchNumber,
   }) {
     return Drug(
       id: id,
@@ -115,6 +150,8 @@ class Drug {
       imageBase64: imageBase64 ?? this.imageBase64,
       countryOfOrigin: countryOfOrigin ?? this.countryOfOrigin,
       manufacturerName: manufacturerName ?? this.manufacturerName,
+      expiryDate: expiryDate ?? this.expiryDate,
+      batchNumber: batchNumber ?? this.batchNumber,
     );
   }
 
@@ -131,6 +168,10 @@ class Drug {
       imageBase64: map['imageBase64'] as String?,
       countryOfOrigin: map['countryOfOrigin'] as String?,
       manufacturerName: map['manufacturerName'] as String?,
+      expiryDate: map['expiryDateMs'] == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch((map['expiryDateMs'] as num).toInt()),
+      batchNumber: map['batchNumber'] as String?,
     );
   }
 
@@ -146,6 +187,8 @@ class Drug {
       'imageBase64': imageBase64,
       'countryOfOrigin': countryOfOrigin,
       'manufacturerName': manufacturerName,
+      'expiryDateMs': expiryDate?.millisecondsSinceEpoch,
+      'batchNumber': batchNumber,
     };
   }
 }

@@ -3,26 +3,44 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_theme.dart';
 
 /// Shared "floating glass pill" chrome for the bottom nav bars —
-/// blurred, translucent background (Telegram / Google Photos style)
-/// instead of a flat opaque one.
+/// blurred, translucent background plus a soft tinted capsule that
+/// slides behind whichever tab is active, matching Telegram's 2026
+/// "Liquid Glass" bottom bar (translucent floating pill, frosted
+/// blur, an animated highlight behind the selected tab rather than
+/// just a recolored icon).
 ///
 /// Both FloatingNavBar and StaffFloatingNavBar build their own Row of
 /// items and hand it in as `child`; this widget owns the shape, blur,
-/// color, shadow, and — importantly — makes sure nothing scrolling
-/// underneath (Scaffold(extendBody: true)) can be tapped *through*
-/// the pill. Pulling this out once means the two nav bars can't drift
-/// out of sync the way they did with the dark-mode colors.
+/// color, shadow, and sliding indicator — pulling this out once means
+/// the two nav bars can't drift out of sync the way they did with the
+/// dark-mode colors.
 class GlassNavShell extends StatelessWidget {
-  const GlassNavShell({super.key, required this.child});
+  const GlassNavShell({
+    super.key,
+    required this.child,
+    required this.itemCount,
+    required this.activeIndex,
+  });
 
   final Widget child;
 
+  /// How many evenly-spaced tabs [child]'s Row lays out — needed here
+  /// so the indicator can compute each tab's slot width for itself
+  /// rather than the nav bars tracking their own indicator geometry.
+  final int itemCount;
+
+  /// Index of the currently-selected tab; the indicator animates to
+  /// this slot whenever it changes.
+  final int activeIndex;
+
   static const double height = 68;
   static const double radius = 34;
+  static const double _indicatorInset = 6;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return SafeArea(
       child: Padding(
@@ -59,15 +77,42 @@ class GlassNavShell extends StatelessWidget {
                 child: Container(
                   height: height,
                   decoration: BoxDecoration(
+                    // Translucent, not opaque — this is what actually
+                    // lets the BackdropFilter blur read as "glass"
+                    // instead of a flat card that happens to sit atop
+                    // a blur nobody can see.
                     color: AppTheme.navBarGlassColor(context),
                     borderRadius: BorderRadius.circular(radius),
                     border: Border.all(
                       color: isDark
-                          ? Colors.white.withValues(alpha: 0.10)
-                          : Colors.black.withValues(alpha: 0.05),
+                          ? Colors.white.withValues(alpha: 0.12)
+                          : Colors.white.withValues(alpha: 0.55),
                     ),
                   ),
-                  child: child,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final slotWidth = constraints.maxWidth / itemCount;
+                      return Stack(
+                        children: [
+                          AnimatedPositioned(
+                            duration: const Duration(milliseconds: 280),
+                            curve: Curves.easeOutCubic,
+                            left: slotWidth * activeIndex + _indicatorInset,
+                            top: 8,
+                            bottom: 8,
+                            width: slotWidth - (_indicatorInset * 2),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: primary.withValues(alpha: isDark ? 0.24 : 0.13),
+                                borderRadius: BorderRadius.circular(radius - 8),
+                              ),
+                            ),
+                          ),
+                          child,
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

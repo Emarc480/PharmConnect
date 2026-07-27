@@ -93,6 +93,18 @@ class DrugProvider extends ChangeNotifier {
   List<Drug> get lowStockDrugs =>
       List.unmodifiable(_drugs.where((d) => d.isLowStock));
 
+  int get outOfStockCount => _drugs.where((d) => d.stockQuantity <= 0).length;
+
+  int get expiringSoonCount => _drugs.where((d) => d.isExpiringSoon).length;
+
+  List<Drug> get expiringSoonDrugs =>
+      List.unmodifiable(_drugs.where((d) => d.isExpiringSoon));
+
+  int get expiredCount => _drugs.where((d) => d.isExpired).length;
+
+  List<Drug> get expiredDrugs =>
+      List.unmodifiable(_drugs.where((d) => d.isExpired));
+
   void _onSnapshot(QuerySnapshot<Map<String, dynamic>> snapshot) {
     _drugs = snapshot.docs.map((d) => Drug.fromMap(d.id, d.data())).toList();
     _isLoading = false;
@@ -133,6 +145,8 @@ class DrugProvider extends ChangeNotifier {
     String? imageBase64,
     String? countryOfOrigin,
     String? manufacturerName,
+    DateTime? expiryDate,
+    String? batchNumber,
   }) async {
     final drug = Drug(
       id: '',
@@ -146,6 +160,8 @@ class DrugProvider extends ChangeNotifier {
       imageBase64: imageBase64,
       countryOfOrigin: countryOfOrigin,
       manufacturerName: manufacturerName,
+      expiryDate: expiryDate,
+      batchNumber: batchNumber,
     );
     await _db.collection('drugs').add(drug.toMap());
   }
@@ -154,14 +170,20 @@ class DrugProvider extends ChangeNotifier {
     await _db.collection('drugs').doc(drug.id).update(drug.toMap());
   }
 
-  Future<void> adjustStock(String id, int change) async {
+  /// Applies [change] to a drug's stockQuantity and returns the
+  /// resulting value (clamped to >= 0), so callers — e.g. the
+  /// Inventory stepper, restock sheet, and stock adjustment log — can
+  /// record an accurate [StockMovement.resultingStock] without a
+  /// second read.
+  Future<int> adjustStock(String id, int change) async {
     final ref = _db.collection('drugs').doc(id);
-    await _db.runTransaction((tx) async {
+    return _db.runTransaction<int>((tx) async {
       final snap = await tx.get(ref);
-      if (!snap.exists) return;
+      if (!snap.exists) return 0;
       final current = ((snap.data()?['stockQuantity'] as num?) ?? 0).toInt();
       final updated = (current + change).clamp(0, 999999);
       tx.update(ref, {'stockQuantity': updated});
+      return updated;
     });
   }
 

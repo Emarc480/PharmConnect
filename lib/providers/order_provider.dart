@@ -26,6 +26,20 @@ class OrderProvider extends ChangeNotifier {
   String? _uid;
   bool _isStaff = false;
 
+  // Firestore reports every existing doc as an "added" change on the
+  // very first snapshot of a new listener, so this flag is what keeps
+  // that initial load from flooding [newOrderStream] with every order
+  // in the collection the moment a staff member opens the app.
+  bool _isFirstSnapshotForListener = true;
+
+  final StreamController<Order> _newOrderController = StreamController<Order>.broadcast();
+
+  /// Emits an order the moment it's added to Firestore after the
+  /// initial load — used to show an in-app "new order" alert on staff
+  /// screens. Only fires for staff sessions (the unfiltered `orders`
+  /// query); customers watching just their own history don't need it.
+  Stream<Order> get newOrderStream => _newOrderController.stream;
+
   bool get isLoading => _isLoading;
 
   List<Order> get orders => List.unmodifiable(_orders);
@@ -48,6 +62,7 @@ class OrderProvider extends ChangeNotifier {
 
   void _listen() {
     _sub?.cancel();
+    _isFirstSnapshotForListener = true;
     if (_uid == null) {
       _orders = [];
       _isLoading = false;
@@ -77,8 +92,23 @@ class OrderProvider extends ChangeNotifier {
   }
 
   void _onSnapshot(QuerySnapshot<Map<String, dynamic>> snapshot) {
+    final wasFirstSnapshot = _isFirstSnapshotForListener;
+    _isFirstSnapshotForListener = false;
+
     _orders = snapshot.docs.map((d) => Order.fromMap(d.id, d.data())).toList();
     _isLoading = false;
+
+    if (!wasFirstSnapshot && _isStaff) {
+      for (final change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.added) {
+          final data = change.doc.data();
+          if (data != null) {
+            _newOrderController.add(Order.fromMap(change.doc.id, data));
+          }
+        }
+      }
+    }
+
     notifyListeners();
   }
 
@@ -122,6 +152,21 @@ class OrderProvider extends ChangeNotifier {
             .toInt();
         final updatedStock = (currentStock - item.quantity).clamp(0, 999999);
         tx.update(drugRefs[item.drugId]!, {'stockQuantity': updatedStock});
+
+        // Audit trail entry for this sale — read-only for the
+        // customer client from here on (see firestore.rules), so
+        // Stock History stays a trustworthy record of every stock
+        // change, not just staff-driven ones.
+        tx.set(_db.collection('stock_movements').doc(), {
+          'drugId': item.drugId,
+          'drugName': item.drugName,
+          'delta': -item.quantity,
+          'resultingStock': updatedStock,
+          'reason': 'sale',
+          'staffId': uid,
+          'staffName': 'Order #${orderRef.id.length > 6 ? orderRef.id.substring(0, 6).toUpperCase() : orderRef.id.toUpperCase()}',
+          'timestampMs': now.millisecondsSinceEpoch,
+        });
       }
 
       tx.set(orderRef, order.toMap());
@@ -169,6 +214,7 @@ class OrderProvider extends ChangeNotifier {
   @override
   void dispose() {
     _sub?.cancel();
+    _newOrderController.close();
     super.dispose();
   }
 }

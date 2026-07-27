@@ -30,12 +30,28 @@ class AppUser {
   final UserRole role;
   final bool deletionRequested;
 
+  /// Grants access to the Staff Management screen (promoting/demoting
+  /// staff, deactivating accounts). Defaults false for everyone —
+  /// there's no client-side way to create the first admin, so it must
+  /// be set to `true` on a staff user's Firestore doc from the
+  /// console once, to bootstrap access.
+  final bool isAdmin;
+
+  /// Staff-only "soft disable" switch an admin can flip instead of
+  /// deleting an account outright (client apps can't delete other
+  /// Firebase Auth users without the Admin SDK). Deactivated staff are
+  /// treated as non-staff by [StaffOnly] guards. Always true for
+  /// customers.
+  final bool isActive;
+
   const AppUser({
     required this.uid,
     required this.name,
     required this.email,
     required this.role,
     this.deletionRequested = false,
+    this.isAdmin = false,
+    this.isActive = true,
   });
 
   factory AppUser.fromMap(String uid, Map<String, dynamic> map) {
@@ -44,7 +60,9 @@ class AppUser {
       name: (map['name'] as String?) ?? '',
       email: (map['email'] as String?) ?? '',
       role: UserRoleLabel.fromName((map['role'] as String?) ?? 'customer'),
-      deletionRequested: (map['deletionRequested'] as bool?) ?? false
+      deletionRequested: (map['deletionRequested'] as bool?) ?? false,
+      isAdmin: (map['isAdmin'] as bool?) ?? false,
+      isActive: (map['isActive'] as bool?) ?? true,
     );
   }
 
@@ -54,6 +72,8 @@ class AppUser {
       'email': email,
       'role': role.name,
       'deletionRequested': deletionRequested,
+      'isAdmin': isAdmin,
+      'isActive': isActive,
     };
   }
 
@@ -62,6 +82,8 @@ class AppUser {
     name: name,
     email: email,
     role: role,
-    deletionRequested: deletionRequested ?? this.deletionRequested
+    deletionRequested: deletionRequested ?? this.deletionRequested,
+    isAdmin: isAdmin,
+    isActive: isActive,
   );
 }

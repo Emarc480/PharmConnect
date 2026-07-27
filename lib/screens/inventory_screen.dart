@@ -6,7 +6,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../models/drug.dart';
+import '../models/stock_movement.dart';
 import '../providers/drug_provider.dart';
+import '../providers/stock_movement_provider.dart';
+import '../providers/auth_provider.dart';
 import '../core/constants/drug_categories.dart';
 import '../core/constants/countries.dart';
 import '../core/theme/app_theme.dart';
@@ -27,6 +30,33 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Applies a +/- stepper tap and logs it as a 'correction' movement
+  /// so quick adjustments still show up in the Stock History audit
+  /// trail, not just full form edits and explicit restocks.
+  Future<void> _adjustStock(Drug drug, int delta) async {
+    final drugProvider = context.read<DrugProvider>();
+    final movementProvider = context.read<StockMovementProvider>();
+    final user = context.read<AuthProvider>().currentUser;
+    final resultingStock = await drugProvider.adjustStock(drug.id, delta);
+    await movementProvider.logMovement(
+      drugId: drug.id,
+      drugName: drug.name,
+      delta: delta,
+      resultingStock: resultingStock,
+      reason: StockMovementReason.correction,
+      staffId: user?.uid ?? '',
+      staffName: user?.name.isNotEmpty == true ? user!.name : 'Staff',
+    );
+  }
+
+  Future<void> _showRestockSheet(BuildContext context, Drug drug) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _RestockForm(drug: drug),
+    );
   }
 
   @override
@@ -159,13 +189,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                       onTap: () =>
                                           _showEditDrugSheet(context, drug),
                                       onDecrement: drug.stockQuantity > 0
-                                          ? () => drugProvider.adjustStock(
-                                              drug.id,
-                                              -1,
-                                            )
+                                          ? () => _adjustStock(drug, -1)
                                           : null,
-                                      onIncrement: () =>
-                                          drugProvider.adjustStock(drug.id, 1),
+                                      onIncrement: () => _adjustStock(drug, 1),
+                                      onRestock: () =>
+                                          _showRestockSheet(context, drug),
                                     );
                                   },
                                 ),
@@ -256,12 +284,14 @@ class _InventoryGridCard extends StatelessWidget {
     required this.onTap,
     required this.onDecrement,
     required this.onIncrement,
+    required this.onRestock,
   });
 
   final Drug drug;
   final VoidCallback onTap;
   final VoidCallback? onDecrement;
   final VoidCallback onIncrement;
+  final VoidCallback onRestock;
 
   Color get _stockColor {
     if (drug.stockQuantity <= 0) return Colors.grey.shade600;
@@ -334,12 +364,33 @@ class _InventoryGridCard extends StatelessWidget {
                             : Icons.bolt_rounded,
                       ),
                     ),
+                  if (drug.isExpired || drug.isExpiringSoon)
+                    Positioned(
+                      left: 10,
+                      top: (isOutOfStock || drug.isLowStock) ? 38 : 10,
+                      child: GridCardBadge(
+                        label: drug.isExpired ? 'Expired' : 'Expiring soon',
+                        color: drug.isExpired ? Colors.red : Colors.deepOrange,
+                        icon: drug.isExpired
+                            ? Icons.dangerous_outlined
+                            : Icons.event_busy_outlined,
+                      ),
+                    ),
                   Positioned(
                     right: 8,
                     top: 8,
-                    child: GlassIconButton(
-                      icon: Icons.edit_outlined,
-                      onTap: onTap,
+                    child: Row(
+                      children: [
+                        GlassIconButton(
+                          icon: Icons.local_shipping_outlined,
+                          onTap: onRestock,
+                        ),
+                        const SizedBox(width: 6),
+                        GlassIconButton(
+                          icon: Icons.edit_outlined,
+                          onTap: onTap,
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -408,6 +459,35 @@ class _InventoryGridCard extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                               color: Colors.grey.shade600,
                             ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (drug.hasExpiry) ...[
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.event_outlined,
+                          size: 11,
+                          color: drug.isExpired
+                              ? Colors.red
+                              : drug.isExpiringSoon
+                                  ? Colors.deepOrange
+                                  : Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Exp: ${drug.expiryLabel}',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: drug.isExpired
+                                ? Colors.red
+                                : drug.isExpiringSoon
+                                    ? Colors.deepOrange
+                                    : Colors.grey.shade600,
                           ),
                         ),
                       ],
@@ -565,8 +645,15 @@ class _DrugFormState extends State<_DrugForm> {
   late final _discountController = TextEditingController(
     text: widget.existingDrug?.discountPercent.toString() ?? '0',
   );
+  late final _batchController = TextEditingController(
+    text: widget.existingDrug?.batchNumber ?? '',
+  );
   late String _category =
       widget.existingDrug?.category ?? kDrugCategories.first;
+
+  /// Optional — older stock may predate this field, so null is a
+  /// valid "not set" state, not just an in-progress selection.
+  DateTime? _expiryDate;
 
   /// ISO country code (e.g. 'UG') for the "Country of origin"
   /// dropdown. Null/unselected is allowed — country of manufacture
@@ -585,6 +672,12 @@ class _DrugFormState extends State<_DrugForm> {
   bool _isDeleting = false;
 
   @override
+  void initState() {
+    super.initState();
+    _expiryDate = widget.existingDrug?.expiryDate;
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _manufacturerController.dispose();
@@ -592,6 +685,7 @@ class _DrugFormState extends State<_DrugForm> {
     _reorderLevelController.dispose();
     _priceController.dispose();
     _discountController.dispose();
+    _batchController.dispose();
     super.dispose();
   }
 
@@ -851,6 +945,64 @@ class _DrugFormState extends State<_DrugForm> {
                 ],
                 onChanged: (value) => setState(() => _countryCode = value),
               ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _batchController,
+                decoration: const InputDecoration(
+                  labelText: 'Batch/lot number (optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _expiryDate ?? DateTime.now().add(const Duration(days: 365)),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2100),
+                  );
+                  if (picked != null) setState(() => _expiryDate = picked);
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Expiry date (optional)',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: _expiryDate == null
+                        ? const Icon(Icons.calendar_today_outlined, size: 18)
+                        : IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () => setState(() => _expiryDate = null),
+                          ),
+                  ),
+                  child: Text(
+                    _expiryDate == null
+                        ? 'Not set'
+                        : '${_expiryDate!.day}/${_expiryDate!.month}/${_expiryDate!.year}',
+                  ),
+                ),
+              ),
+              if (widget.isEditing) ...[
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: _isSaving || _isDeleting
+                      ? null
+                      : () {
+                          Navigator.pop(context);
+                          showModalBottomSheet<void>(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (context) => _RestockForm(drug: widget.existingDrug!),
+                          );
+                        },
+                  icon: const Icon(Icons.local_shipping_outlined),
+                  label: const Text('Restock this drug'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.inStockGreen,
+                    side: const BorderSide(color: AppTheme.inStockGreen),
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: _isSaving || _isDeleting ? null : _save,
@@ -907,6 +1059,8 @@ class _DrugFormState extends State<_DrugForm> {
     setState(() => _isSaving = true);
     final navigator = Navigator.of(context);
     final drugProvider = context.read<DrugProvider>();
+    final movementProvider = context.read<StockMovementProvider>();
+    final user = context.read<AuthProvider>().currentUser;
     try {
       // Resolve the final photo: a newly picked file wins, otherwise
       // keep the existing one unless it was explicitly removed.
@@ -923,17 +1077,22 @@ class _DrugFormState extends State<_DrugForm> {
       final manufacturerName = manufacturerText.isEmpty
           ? null
           : manufacturerText;
+      final batchText = _batchController.text.trim();
+      final batchNumber = batchText.isEmpty ? null : batchText;
+      final newStock = int.parse(_stockController.text);
       if (existing == null) {
         await drugProvider.addDrug(
           name: _nameController.text.trim(),
           category: _category,
-          stockQuantity: int.parse(_stockController.text),
+          stockQuantity: newStock,
           reorderLevel: int.parse(_reorderLevelController.text),
           price: double.parse(_priceController.text),
           discountPercent: int.parse(_discountController.text).clamp(0, 99),
           imageBase64: imageBase64,
           countryOfOrigin: _countryCode,
           manufacturerName: manufacturerName,
+          expiryDate: _expiryDate,
+          batchNumber: batchNumber,
         );
       } else {
         await drugProvider.updateDrug(
@@ -943,14 +1102,33 @@ class _DrugFormState extends State<_DrugForm> {
             description: existing.description,
             category: _category,
             price: double.parse(_priceController.text),
-            stockQuantity: int.parse(_stockController.text),
+            stockQuantity: newStock,
             reorderLevel: int.parse(_reorderLevelController.text),
             discountPercent: int.parse(_discountController.text).clamp(0, 99),
             imageBase64: imageBase64,
             countryOfOrigin: _countryCode,
             manufacturerName: manufacturerName,
+            expiryDate: _expiryDate,
+            batchNumber: batchNumber,
           ),
         );
+        // The stock field on this form is a free-text override, not a
+        // +/- action — if staff typed a different number than what
+        // was already saved, that's a manual correction and belongs
+        // in the audit trail like every other stock change.
+        final delta = newStock - existing.stockQuantity;
+        if (delta != 0) {
+          await movementProvider.logMovement(
+            drugId: existing.id,
+            drugName: _nameController.text.trim(),
+            delta: delta,
+            resultingStock: newStock,
+            reason: StockMovementReason.correction,
+            staffId: user?.uid ?? '',
+            staffName: user?.name.isNotEmpty == true ? user!.name : 'Staff',
+            note: 'Edited via drug form',
+          );
+        }
       }
       navigator.pop();
     } catch (_) {
@@ -1005,6 +1183,144 @@ class _DrugFormState extends State<_DrugForm> {
           const SnackBar(
             content: Text('Could not delete drug. Please try again.'),
           ),
+        );
+      }
+    }
+  }
+}
+
+/// Bottom sheet for the "Restock" workflow — deliberately separate
+/// from the general edit form so a stock increase from a supplier
+/// delivery is captured with its own quantity + supplier name + note,
+/// rather than just overwriting the stock number silently.
+class _RestockForm extends StatefulWidget {
+  const _RestockForm({required this.drug});
+
+  final Drug drug;
+
+  @override
+  State<_RestockForm> createState() => _RestockFormState();
+}
+
+class _RestockFormState extends State<_RestockForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _quantityController = TextEditingController();
+  final _supplierController = TextEditingController();
+  final _noteController = TextEditingController();
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _supplierController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset + 16),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Restock ${widget.drug.name}',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Currently ${widget.drug.stockQuantity} units in stock',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 12.5),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _quantityController,
+                decoration: const InputDecoration(
+                  labelText: 'Units received',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  final n = int.tryParse(v ?? '');
+                  if (n == null || n <= 0) return 'Enter a valid quantity';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _supplierController,
+                decoration: const InputDecoration(
+                  labelText: 'Supplier (optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _noteController,
+                decoration: const InputDecoration(
+                  labelText: 'Note (optional)',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _isSaving ? null : _save,
+                style: FilledButton.styleFrom(backgroundColor: AppTheme.inStockGreen),
+                child: _isSaving
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Confirm restock'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    final navigator = Navigator.of(context);
+    final drugProvider = context.read<DrugProvider>();
+    final movementProvider = context.read<StockMovementProvider>();
+    final user = context.read<AuthProvider>().currentUser;
+    final quantity = int.parse(_quantityController.text);
+    final supplier = _supplierController.text.trim();
+    final note = _noteController.text.trim();
+
+    try {
+      final resultingStock = await drugProvider.adjustStock(widget.drug.id, quantity);
+      await movementProvider.logMovement(
+        drugId: widget.drug.id,
+        drugName: widget.drug.name,
+        delta: quantity,
+        resultingStock: resultingStock,
+        reason: StockMovementReason.restock,
+        staffId: user?.uid ?? '',
+        staffName: user?.name.isNotEmpty == true ? user!.name : 'Staff',
+        supplierName: supplier.isEmpty ? null : supplier,
+        note: note.isEmpty ? null : note,
+      );
+      navigator.pop();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not log this restock. Please try again.')),
         );
       }
     }

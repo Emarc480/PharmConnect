@@ -14,6 +14,7 @@ import 'providers/ai_pharmacist_provider.dart';
 import 'providers/wishlist_provider.dart';
 import 'providers/theme_mode_provider.dart';
 import 'providers/promo_banner_provider.dart';
+import 'providers/stock_movement_provider.dart';
 import 'core/constants/app_routes.dart';
 import 'core/theme/app_theme.dart';
 
@@ -50,6 +51,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => AiPharmacistProvider()),
         ChangeNotifierProvider(create: (_) => WishlistProvider()),
         ChangeNotifierProvider(create: (_) => PromoBannerProvider()),
+        ChangeNotifierProvider(create: (_) => StockMovementProvider()),
       ],
       child: const PharmConnectApp(),
     ),
