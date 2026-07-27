@@ -47,8 +47,8 @@ class AppTheme {
 
   static Color navBarGlassColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF1E1E1E)
-        : Colors.white;
+        ? Colors.black.withValues(alpha: 0.38)
+        : Colors.white.withValues(alpha: 0.62);
   }
 
   static const double navBarClearance = 50;
