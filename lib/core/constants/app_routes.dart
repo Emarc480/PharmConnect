@@ -22,6 +22,10 @@ import '../../screens/prescription_management_screen.dart';
 import '../../widgets/role_guard.dart';
 import '../../screens/app_settings_screen.dart';
 import '../../screens/promo_banner_management_screen.dart';
+import '../../screens/reports_screen.dart';
+import '../../screens/stock_history_screen.dart';
+import '../../screens/staff_notifications_screen.dart';
+import '../../screens/staff_management_screen.dart';
 
 class AppRoutes {
   /// Root route: decides between Login / Home / Staff Dashboard based on
@@ -46,6 +50,10 @@ class AppRoutes {
   static const String prescriptionManagement = '/prescription-management';
   static const String appSettings = '/app-settings';
   static const String promoBannerManagement = '/promo-banner-management';
+  static const String reports = '/reports';
+  static const String stockHistory = '/stock-history';
+  static const String staffNotifications = '/staff-notifications';
+  static const String staffManagement = '/staff-management';
 
   static Map<String, WidgetBuilder> routes = {
     splash: (context) => const AuthGate(),
@@ -65,6 +73,10 @@ class AppRoutes {
     prescriptionManagement: (context) => const StaffOnly(child: PrescriptionManagementScreen()),
     appSettings: (context) => const AppSettingsScreen(),
     promoBannerManagement: (context) => const StaffOnly(child: PromoBannerManagementScreen()),
+    reports: (context) => const StaffOnly(child: ReportsScreen()),
+    stockHistory: (context) => const StaffOnly(child: StockHistoryScreen()),
+    staffNotifications: (context) => const StaffOnly(child: StaffNotificationsScreen()),
+    staffManagement: (context) => const AdminOnly(child: StaffManagementScreen()),
   };
 
   /// Handles routes that need arguments (drug object, order id).
