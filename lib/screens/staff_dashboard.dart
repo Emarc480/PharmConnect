@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../providers/order_provider.dart';
 import '../providers/drug_provider.dart';
 import '../providers/refill_provider.dart';
+import '../providers/prescription_provider.dart';
 
 
 
@@ -36,6 +37,7 @@ class StaffDashboard extends StatelessWidget {
     final orders = context.watch<OrderProvider>().orders;
     final drugs = context.watch<DrugProvider>();
     final refills = context.watch<RefillProvider>();
+    final prescriptions = context.watch<PrescriptionProvider>();
 
     final newOrders = orders.where((o) => o.status == OrderStatus.placed).length;
     final todaysSales = orders
@@ -44,20 +46,65 @@ class StaffDashboard extends StatelessWidget {
         .round();
     final recentOrders = orders.take(3).toList();
     final firstName = (user?.name ?? '').trim().split(' ').firstOrEmpty;
+    final notificationCount = drugs.lowStockCount +
+        drugs.expiringSoonCount +
+        drugs.expiredCount +
+        refills.pendingCount +
+        prescriptions.pendingCount;
 
     return SafeArea(
       bottom: false,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, AppTheme.navBarClearance),
         children: [
-          Text(
-            'Hi, ${firstName.isEmpty ? 'there' : firstName} 👋',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "Here's what's happening at the pharmacy today.",
-            style: TextStyle(color: Colors.grey.shade600),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hi, ${firstName.isEmpty ? 'there' : firstName} 👋',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Here's what's happening at the pharmacy today.",
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
+              ),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.staffNotifications),
+                    icon: const Icon(Icons.notifications_none_rounded),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppTheme.navBarSurface(context),
+                      side: BorderSide(color: AppTheme.borderGrey),
+                    ),
+                  ),
+                  if (notificationCount > 0)
+                    Positioned(
+                      right: 4,
+                      top: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        child: Text(
+                          notificationCount > 9 ? '9+' : '$notificationCount',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ),
           const SizedBox(height: 20),
 
@@ -106,6 +153,30 @@ class StaffDashboard extends StatelessWidget {
                   value: '${refills.pendingCount}',
                   color: AppTheme.primaryNavy,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.refillManagement),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.event_busy_outlined,
+                  label: 'Expiring Soon',
+                  value: '${drugs.expiringSoonCount}',
+                  color: Colors.deepOrange,
+                  onTap: () => onNavigateToTab(1),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.block_rounded,
+                  label: 'Out of Stock',
+                  value: '${drugs.outOfStockCount}',
+                  color: Colors.grey.shade700,
+                  onTap: () => onNavigateToTab(1),
                 ),
               ),
             ],
@@ -177,6 +248,53 @@ class StaffDashboard extends StatelessWidget {
               label: const Text('Manage Promo Banners', style: TextStyle(fontWeight: FontWeight.w700)),
             ),
           ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.reports),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.primaryNavy,
+                side: BorderSide(color: AppTheme.borderGrey),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.bar_chart_rounded),
+              label: const Text('View Reports', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.stockHistory),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.primaryNavy,
+                side: BorderSide(color: AppTheme.borderGrey),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.history_rounded),
+              label: const Text('Stock History', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ),
+          if (user?.isAdmin ?? false) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.staffManagement),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.primaryNavy,
+                  side: BorderSide(color: AppTheme.borderGrey),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.admin_panel_settings_outlined),
+                label: const Text('Staff Management', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+            ),
+          ],
         ],
       ),
     );
