@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -22,12 +23,15 @@ class PrescriptionUploadScreen extends StatefulWidget {
 class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
   final _orderController = TextEditingController();
   final _notesController = TextEditingController();
+  final _textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
   File? _pickedImage;
+  bool _isScanning = false;
 
   @override
   void dispose() {
     _orderController.dispose();
     _notesController.dispose();
+    _textRecognizer.close();
     super.dispose();
   }
 
@@ -40,6 +44,7 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
       );
       if (picked != null) {
         setState(() => _pickedImage = File(picked.path));
+        _scanPrescription();
       }
     } catch (_) {
       if (!mounted) return;
@@ -47,6 +52,95 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
         const SnackBar(content: Text('Could not open the camera/gallery.')),
       );
     }
+  }
+
+  /// Runs on-device OCR (Google ML Kit) over the picked prescription
+  /// photo, then shows the recognized text in an editable dialog so
+  /// the patient can fix any misread words before it's used as their
+  /// order. Handwritten prescriptions often OCR poorly, so this is
+  /// always a suggestion to review, never auto-submitted as-is.
+  Future<void> _scanPrescription() async {
+    final image = _pickedImage;
+    if (image == null) return;
+
+    setState(() => _isScanning = true);
+    try {
+      final inputImage = InputImage.fromFile(image);
+      final result = await _textRecognizer.processImage(inputImage);
+      final recognizedText = result.text.trim();
+      if (!mounted) return;
+
+      if (recognizedText.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No text could be read from that photo — try a clearer, well-lit shot, or type the order manually.'),
+          ),
+        );
+        return;
+      }
+      await _showOcrReviewDialog(recognizedText);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Text scan failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isScanning = false);
+    }
+  }
+
+  Future<void> _showOcrReviewDialog(String recognizedText) async {
+    final editController = TextEditingController(text: recognizedText);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Review scanned text'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Check this against the photo — OCR can misread handwriting. Edit anything that\'s wrong before using it.',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: editController,
+                maxLines: 6,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Discard'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryNavy, foregroundColor: Colors.white),
+            child: const Text('Use this text'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final edited = editController.text.trim();
+      setState(() {
+        _orderController.text = _orderController.text.trim().isEmpty
+            ? edited
+            : '${_orderController.text.trim()}\n$edited';
+      });
+    }
+    editController.dispose();
   }
 
   void _showSourceSheet() {
@@ -166,6 +260,25 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
                               fit: BoxFit.cover,
                             ),
                           ),
+                          if (_isScanning)
+                            Container(
+                              width: double.infinity,
+                              height: 220,
+                              decoration: BoxDecoration(
+                                color: Colors.black45,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CircularProgressIndicator(color: Colors.white),
+                                    SizedBox(height: 10),
+                                    Text('Reading prescription…', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ),
+                            ),
                           Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: CircleAvatar(
@@ -173,7 +286,7 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
                               radius: 16,
                               child: IconButton(
                                 icon: const Icon(Icons.close, color: Colors.white, size: 18),
-                                onPressed: () => setState(() => _pickedImage = null),
+                                onPressed: _isScanning ? null : () => setState(() => _pickedImage = null),
                               ),
                             ),
                           ),
@@ -181,6 +294,18 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
                       ),
               ),
             ),
+            if (_pickedImage != null && !_isScanning) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _scanPrescription,
+                  icon: const Icon(Icons.document_scanner_outlined, size: 18),
+                  label: const Text('Re-scan text from photo'),
+                  style: TextButton.styleFrom(foregroundColor: AppTheme.primaryNavy),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             Row(
               children: [
