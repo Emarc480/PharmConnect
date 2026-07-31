@@ -54,6 +54,24 @@ extension OrderStatusLabel on OrderStatus {
     }
   }
 
+  /// One step back — powers the "revert" action for staff who advance
+  /// an order by mistake (e.g. marked Shipped before it actually went
+  /// out). Null for [placed], since there's nothing before it.
+  OrderStatus? get previous {
+    switch (this) {
+      case OrderStatus.placed:
+        return null;
+      case OrderStatus.processing:
+        return OrderStatus.placed;
+      case OrderStatus.shipped:
+        return OrderStatus.processing;
+      case OrderStatus.arrivingSoon:
+        return OrderStatus.shipped;
+      case OrderStatus.delivered:
+        return OrderStatus.arrivingSoon;
+    }
+  }
+
   static OrderStatus fromName(String name) {
     return OrderStatus.values.firstWhere(
       (s) => s.name == name,

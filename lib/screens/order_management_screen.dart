@@ -588,6 +588,39 @@ Color _statusDotColor(OrderStatus status) {
   }
 }
 
+/// Confirms before reverting, since it's the kind of action that
+/// should never fire from an accidental tap the way advancing (a much
+/// more frequent, low-stakes action) can.
+Future<void> _confirmRevert(BuildContext context, Order order) async {
+  final previous = order.status.previous;
+  if (previous == null) return;
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Revert order status?'),
+      content: Text(
+        'Order ${order.id} will move back from "${order.status.label}" to "${previous.label}". '
+        'Use this if a status was marked by mistake.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: const Text('Revert'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true && context.mounted) {
+    await context.read<OrderProvider>().revertStatus(order.id);
+  }
+}
+
 class _OrderRow extends StatelessWidget {
   final Order order;
   final bool selectionMode;
@@ -655,16 +688,56 @@ class _OrderRow extends StatelessWidget {
             ),
           ),
           if (!selectionMode)
-            if (next != null)
-              TextButton(
-                onPressed: () => context.read<OrderProvider>().advanceStatus(order.id),
-                child: Text('Mark ${next.label}'),
-              )
-            else
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('Complete', style: TextStyle(color: Colors.grey)),
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (next != null)
+                  ElevatedButton(
+                    onPressed: () => context.read<OrderProvider>().advanceStatus(order.id),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _statusDotColor(next),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                    ),
+                    child: Text(next.label),
+                  )
+                else
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text('Complete', style: TextStyle(color: Colors.grey)),
+                  ),
+                // Only orders past "Order Placed" have anywhere to
+                // revert to — a placed order is already the earliest
+                // status, so there's nothing "back" from there.
+                if (order.status.previous != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: InkWell(
+                      onTap: () => _confirmRevert(context, order),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.undo, size: 13, color: Colors.grey.shade600),
+                            const SizedBox(width: 3),
+                            Text(
+                              'Undo',
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
         ],
       ),
     );
@@ -693,14 +766,14 @@ class _OrderRow extends StatelessWidget {
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
-          color: AppTheme.inStockGreen,
+          color: _statusDotColor(next),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
             const Icon(Icons.check_circle_outline, color: Colors.white),
             const SizedBox(width: 8),
-            Text('Mark ${next.label}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            Text(next.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
