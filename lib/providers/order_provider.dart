@@ -199,6 +199,32 @@ class OrderProvider extends ChangeNotifier {
     await _db.collection('orders').doc(orderId).update(update);
   }
 
+  /// Moves an order one status back — for staff who advance a status
+  /// by mistake (e.g. marked Shipped before the package actually
+  /// left). Mirrors [advanceStatus]: same fields, opposite direction.
+  Future<void> revertStatus(String orderId) async {
+    final order = byId(orderId);
+    if (order == null) return;
+    final previous = order.status.previous;
+    if (previous == null) return;
+    final now = DateTime.now();
+    final update = <String, dynamic>{
+      'status': previous.name,
+      'lastUpdatedMs': now.millisecondsSinceEpoch,
+      // The timestamp recorded for the status being backed out of is
+      // no longer true — leaving it would make the tracking timeline
+      // still show a time for a step that got undone.
+      'statusTimestampsMs.${order.status.name}': FieldValue.delete(),
+    };
+    // Reverting below "shipped" means the order hasn't actually gone
+    // out for delivery, so an assigned rider no longer applies.
+    if (previous.index < OrderStatus.shipped.index && order.riderName != null) {
+      update['riderName'] = FieldValue.delete();
+      update['riderRating'] = FieldValue.delete();
+    }
+    await _db.collection('orders').doc(orderId).update(update);
+  }
+
   Future<void> cancelOrder(String orderId) async {
     await _db.collection('orders').doc(orderId).delete();
   }
