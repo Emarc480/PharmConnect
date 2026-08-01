@@ -5,10 +5,13 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import '../core/constants/ai_config.dart';
 import '../core/theme/app_theme.dart';
 import '../models/prescription_request.dart';
 import '../providers/auth_provider.dart';
+import '../providers/drug_provider.dart';
 import '../providers/prescription_provider.dart';
+import '../services/prescription_vision_service.dart';
 
 /// "Upload prescription" / "Type your order" screen. Customers either
 /// snap or pick a photo of a paper prescription, type out what they
@@ -39,8 +42,12 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
     try {
       final picked = await ImagePicker().pickImage(
         source: source,
-        maxWidth: 1280,
-        imageQuality: 65,
+        // Handwriting needs finer detail than a typical photo to read
+        // reliably, so this is higher than other image pickers in the
+        // app — still comfortably under Firestore's 1MB inline-image
+        // cap once base64-encoded.
+        maxWidth: 1800,
+        imageQuality: 80,
       );
       if (picked != null) {
         setState(() => _pickedImage = File(picked.path));
@@ -54,17 +61,49 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
     }
   }
 
-  /// Runs on-device OCR (Google ML Kit) over the picked prescription
-  /// photo, then shows the recognized text in an editable dialog so
-  /// the patient can fix any misread words before it's used as their
-  /// order. Handwritten prescriptions often OCR poorly, so this is
-  /// always a suggestion to review, never auto-submitted as-is.
+  /// Reads the picked prescription photo. Doctors' handwriting is
+  /// exactly the case plain character-recognition OCR struggles with,
+  /// so this prefers [PrescriptionVisionService] — a vision model that
+  /// reads the page the way a pharmacist would, cross-referencing
+  /// drug-name spelling, dosage conventions, and (when available) this
+  /// pharmacy's own catalog, while honestly flagging anything it isn't
+  /// sure about. Plain on-device ML Kit OCR is only used as a fallback
+  /// when that's unavailable (no API key configured) or fails (e.g. no
+  /// internet). Either way, results are always shown for the patient
+  /// to review and edit — never auto-submitted as-is.
   Future<void> _scanPrescription() async {
     final image = _pickedImage;
     if (image == null) return;
 
     setState(() => _isScanning = true);
     try {
+      if (AiConfig.isConfigured) {
+        try {
+          final catalogNames = mounted
+              ? context.read<DrugProvider>().allDrugs.map((d) => d.name).toList()
+              : const <String>[];
+          final scan = await PrescriptionVisionService.analyze(
+            imageFile: image,
+            catalogDrugNames: catalogNames,
+          );
+          if (!mounted) return;
+          if (scan.items.isEmpty && scan.transcript.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('No text could be read from that photo — try a clearer, well-lit shot, or type the order manually.'),
+              ),
+            );
+            return;
+          }
+          await _showSmartScanReviewDialog(scan);
+          return;
+        } catch (_) {
+          // Smart scan failed (offline, quota, blocked response, etc.)
+          // — fall through to plain on-device OCR below rather than
+          // leaving the patient with nothing.
+        }
+      }
+
       final inputImage = InputImage.fromFile(image);
       final result = await _textRecognizer.processImage(inputImage);
       final recognizedText = result.text.trim();
@@ -78,18 +117,216 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
         );
         return;
       }
-      await _showOcrReviewDialog(recognizedText);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Text scan failed: $e')),
-      );
+      await _showPlainOcrReviewDialog(recognizedText);
     } finally {
       if (mounted) setState(() => _isScanning = false);
     }
   }
 
-  Future<void> _showOcrReviewDialog(String recognizedText) async {
+  Color _confidenceColor(ScanConfidence c) {
+    switch (c) {
+      case ScanConfidence.high:
+        return AppTheme.inStockGreen;
+      case ScanConfidence.medium:
+        return AppTheme.lowStockOrange;
+      case ScanConfidence.low:
+        return Colors.red;
+    }
+  }
+
+  /// Structured review for the smart handwriting-aware scan: one card
+  /// per medicine line with an editable field, a confidence badge, and
+  /// (when the model was genuinely torn between readings) tappable
+  /// alternate spellings — so fixing a misread doctor scrawl is a tap
+  /// instead of a guessing-game retype.
+  Future<void> _showSmartScanReviewDialog(PrescriptionScanResult scan) async {
+    final lineControllers = <TextEditingController>[
+      for (final item in scan.items) TextEditingController(text: item.toOrderLine()),
+    ];
+    // Whole-transcript fallback box, used when the model couldn't
+    // confidently split things into line items at all.
+    final fallbackController = TextEditingController(text: scan.transcript);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          return AlertDialog(
+            title: const Text('Review scanned prescription'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Doctors\' handwriting is hard even for humans — check each line against the photo and fix anything that\'s wrong.',
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                    ),
+                    if (scan.unclearNotes != null) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                scan.unclearNotes!,
+                                style: const TextStyle(color: Colors.red, fontSize: 12.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                    if (scan.items.isEmpty)
+                      TextField(
+                        controller: fallbackController,
+                        maxLines: 6,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                        ),
+                      )
+                    else
+                      for (var i = 0; i < scan.items.length; i++) ...[
+                        if (i > 0) const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: _confidenceColor(scan.items[i].confidence).withValues(alpha: 0.14),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      scan.items[i].confidence.label,
+                                      style: TextStyle(
+                                        color: _confidenceColor(scan.items[i].confidence),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                  if (scan.items[i].catalogMatch) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryNavy.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        'In stock catalog',
+                                        style: TextStyle(color: AppTheme.primaryNavy, fontWeight: FontWeight.w600, fontSize: 11),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: lineControllers[i],
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                decoration: const InputDecoration(
+                                  isDense: true,
+                                  border: InputBorder.none,
+                                ),
+                              ),
+                              if (scan.items[i].alternates.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Could also be:',
+                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 11.5),
+                                ),
+                                const SizedBox(height: 4),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children: [
+                                    for (final alt in scan.items[i].alternates)
+                                      ActionChip(
+                                        label: Text(alt, style: const TextStyle(fontSize: 12)),
+                                        backgroundColor: Colors.white,
+                                        side: BorderSide(color: Colors.grey.shade300),
+                                        onPressed: () {
+                                          final rest = scan.items[i].dosage;
+                                          setDialogState(() {
+                                            lineControllers[i].text =
+                                                rest != null ? '$alt $rest' : alt;
+                                          });
+                                        },
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Discard'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryNavy, foregroundColor: Colors.white),
+                child: const Text('Use this'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final lines = scan.items.isEmpty
+          ? fallbackController.text.trim()
+          : lineControllers.map((c) => c.text.trim()).where((t) => t.isNotEmpty).join('\n');
+      if (lines.isNotEmpty) {
+        setState(() {
+          _orderController.text = _orderController.text.trim().isEmpty
+              ? lines
+              : '${_orderController.text.trim()}\n$lines';
+        });
+      }
+    }
+    for (final c in lineControllers) {
+      c.dispose();
+    }
+    fallbackController.dispose();
+  }
+
+  /// Fallback review dialog used only when the smart scan couldn't run
+  /// (offline, no API key configured, request failed) and plain
+  /// on-device OCR was used instead.
+  Future<void> _showPlainOcrReviewDialog(String recognizedText) async {
     final editController = TextEditingController(text: recognizedText);
     final confirmed = await showDialog<bool>(
       context: context,
@@ -102,7 +339,7 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Check this against the photo — OCR can misread handwriting. Edit anything that\'s wrong before using it.',
+                'Basic scan mode (smart handwriting reading is unavailable right now) — check this closely against the photo and fix anything that\'s wrong.',
                 style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
               ),
               const SizedBox(height: 12),
