@@ -137,7 +137,7 @@ class CartScreen extends StatelessWidget {
       );
       final total = order.total;
       cart.clear();
-      navigator.pushReplacementNamed(
+      navigator.pushNamed(
         AppRoutes.payment,
         arguments: {'orderId': order.id, 'amount': total},
       );
