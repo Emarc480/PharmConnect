@@ -1,6 +1,6 @@
 # pharm_connect
 
-Pharm Connect
+Pharm Connect project developed by Group-39-Recess-Term
 
 ## Getting Started
 
