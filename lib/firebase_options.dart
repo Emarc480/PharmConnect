@@ -19,10 +19,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web — '
-        'run `flutterfire configure` to add a web config if you need it.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -47,5 +44,14 @@ class DefaultFirebaseOptions {
     messagingSenderId: '350268247024',
     projectId: 'pharmconnect-76495',
     storageBucket: 'pharmconnect-76495.firebasestorage.app',
+  );
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyDIboH1FkQZD0eGerjT3Wda603kmKD9W7w',
+    appId: '1:350268247024:web:0d974f88cc96a9a083eb35',
+    messagingSenderId: '350268247024',
+    projectId: 'pharmconnect-76495',
+    authDomain: 'pharmconnect-76495.firebaseapp.com',
+    storageBucket: 'pharmconnect-76495.firebasestorage.app',
+    measurementId: 'G-GL644D04T6',
   );
 }
